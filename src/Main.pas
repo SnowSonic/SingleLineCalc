@@ -18,11 +18,15 @@ type
     procedure stResultMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
   private
     EP: TExpressionParser;
-    ExpIndex: Integer;
-    Exp: TStrings;
+    EPIndex: Integer;
     LastResult: Int64;
-    function CalcThis: boolean;
+    CalcDigits: Integer;
+    CalcDozens: Int64;
+    // Расчет с указанием, записывать ли расчет в историю
+    function CalcThis(aStore: boolean = True): boolean;
+    // Отформатировать результат в формат текущего округления
     function GetResultStr(aValue: real): string;
+    // Обработчик колеса мышки
     procedure FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: boolean);
   public
     { Public declarations }
@@ -34,67 +38,68 @@ var
 implementation
 
 uses
-  StrUtils;
+  StrUtils, Math;
+
+// По умолчанию укругление до 2-х знаков после запятой
+const
+  ciCalcDigits = 2;
+
 
 {$R *.dfm}
 
-function TfmMain.CalcThis: boolean;
+procedure TfmMain.FormCreate(Sender: TObject);
+begin
+  // Если есть параметр запуска, то надеюсь что это задано сколько символов после запятой
+  if ParamCount > 0 then
+    CalcDigits := StrToIntDef(ParamStr(1), ciCalcDigits)
+  else
+    CalcDigits := ciCalcDigits;
+  // Сразу расчет сколько десятков для округления и деления
+  CalcDozens := Round(Power(10, CalcDigits));
+  // Создание расчетчика
+  EP := TExpressionParser.Create;
+  EPIndex := - 1;
+  // пришиваем обработчик колеса мыши
+  OnMouseWheel := FormMouseWheel;
+
+  { TODO : Чтение последнего расположения и размеров }
+  {
+  Прочитать данные о последнем положении и размере из реестра.
+  Если прочитались, то применить к форме.
+  Если впервые запускается, то сделать ширину окна Width * 15 и расположить по центру
+  }
+end;
+
+procedure TfmMain.FormDestroy(Sender: TObject);
+begin
+  // Освобождаем ресурсы
+  EP.Free;
+  { TODO : Сохранение размеров и положения }
+end;
+
+procedure TfmMain.FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: boolean);
+begin
+  // Размер калькулятора минимум 15 высот и максимум ширина экрана
+  if WheelDelta < 0 then
+    Width := Max(Width - Height, Height * 15)
+  else
+    Width := Min(Width + Height, Screen.Width);
+end;
+
+function TfmMain.CalcThis(aStore: boolean): boolean;
 begin
   try
+    // Что бы не считать
     EP.ClearExpressions;
     if (FormatSettings.DecimalSeparator = ',') then
       EP.AddExpression(ReplaceStr(edEQ.Text, '.', ','))
     else
       EP.AddExpression(ReplaceStr(edEQ.Text, ',', '.'));
-    LastResult := Round(EP.AsFloat[0] * 100);
+    LastResult := Round(EP.AsFloat[0] * CalcDozens);
     Result := True;
   except
     Result := False;
   end;
-end;
-
-procedure TfmMain.FormCreate(Sender: TObject);
-begin
-  EP := TExpressionParser.Create;
-  Exp := TStringList.Create;
-  ExpIndex := - 1;
-  OnMouseWheel := FormMouseWheel;
-  { TODO : Чтение полседнего расположения и размеров }
-  {
-  Прочитать данные о последнем положении и размере из реестра.
-  Если прочитались, то применить к форме.
-  Если впервые запускается, то сделать ширину окна Width * 15 и расположить по центру
- }
-end;
-
-procedure TfmMain.FormDestroy(Sender: TObject);
-begin
-  EP.Free;
-  Exp.Free;
-  { TODO : Сохранение размеров и положения }
-end;
-
-procedure TfmMain.FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: boolean);
-  function Min(Val1, Val2: Integer): Integer;
-  begin
-    if Val1 < Val2 then
-      Result := Val1
-    else
-      Result := Val2
-  end;
-  function Max(Val1, Val2: Integer): Integer;
-  begin
-    if Val1 > Val2 then
-      Result := Val1
-    else
-      Result := Val2
-  end;
-
-begin
-  if WheelDelta > 0 then
-    Width := Min(Width + Height, Screen.Width)
-  else
-    Width := Max(Width - Height, Height * 15);
 end;
 
 function TfmMain.GetResultStr(aValue: real): string;
@@ -102,7 +107,7 @@ var
   i: Integer;
 
 begin
-  Result := Format('%0.2f', [aValue]);
+  Result := Format('%0.'+CalcDigits.toString+'f', [aValue]);
   i := Length(Result);
   while i > 0 do
   begin
@@ -118,21 +123,8 @@ end;
 
 procedure TfmMain.edEQChange(Sender: TObject);
 begin
-  if CalcThis then
-  begin
-    stResult.Font.Color := clYellow;
-    stResult.Caption := GetResultStr(LastResult / 100);
-  end
-  else
-  begin
-    if Length(Trim(edEQ.Text)) > 0 then
-    begin
-      stResult.Font.Color := clRed;
-      stResult.Caption := 'ERROR';
-    end
-    else
-      stResult.Caption := '';
-  end;
+  if CalcThis(False) then
+    stResult.Caption := GetResultStr(LastResult / CalcDozens);
 end;
 
 procedure TfmMain.edEQKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -146,16 +138,16 @@ begin
       if (Exp.IndexOf(edEQ.Text) < 0) then
       begin
         Exp.Add(edEQ.Text);
-        ExpIndex := Exp.Count - 1;
+        EPIndex := Exp.Count - 1;
       end;
       if (ssShift in Shift) then
       begin
         PDV := Round(LastResult / 6);
         SUM := LastResult - PDV;
-        edEQ.Text := GetResultStr(SUM / 100) + '+' + GetResultStr(PDV / 100);
+        edEQ.Text := GetResultStr(SUM / CalcDozens) + '+' + GetResultStr(PDV / CalcDozens);
       end
       else
-        edEQ.Text := GetResultStr(LastResult / 100);
+        edEQ.Text := GetResultStr(LastResult / CalcDozens);
       edEQ.SelectAll;
     end;
   end
