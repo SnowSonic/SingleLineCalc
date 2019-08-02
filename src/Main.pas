@@ -17,11 +17,12 @@ type
     procedure edEQKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure stResultMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
   private
-    EP        : TExpressionParser;
-    ExpIndex  : Integer;
-    Exp       : TStrings;
+    EP: TExpressionParser;
+    ExpIndex: Integer;
+    Exp: TStrings;
     LastResult: Int64;
     function CalcThis: boolean;
+    function GetResultStr(aValue: real): string;
     procedure FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: boolean);
   public
     { Public declarations }
@@ -46,7 +47,7 @@ begin
     else
       EP.AddExpression(ReplaceStr(edEQ.Text, ',', '.'));
     LastResult := Round(EP.AsFloat[0] * 100);
-    Result     := True;
+    Result := True;
   except
     Result := False;
   end;
@@ -54,16 +55,16 @@ end;
 
 procedure TfmMain.FormCreate(Sender: TObject);
 begin
-  EP           := TExpressionParser.Create;
-  Exp          := TStringList.Create;
-  ExpIndex     := - 1;
+  EP := TExpressionParser.Create;
+  Exp := TStringList.Create;
+  ExpIndex := - 1;
   OnMouseWheel := FormMouseWheel;
   { TODO : Чтение полседнего расположения и размеров }
   {
   Прочитать данные о последнем положении и размере из реестра.
   Если прочитались, то применить к форме.
   Если впервые запускается, то сделать ширину окна Width * 15 и расположить по центру
-  }
+ }
 end;
 
 procedure TfmMain.FormDestroy(Sender: TObject);
@@ -96,12 +97,31 @@ begin
     Width := Max(Width - Height, Height * 15);
 end;
 
+function TfmMain.GetResultStr(aValue: real): string;
+var
+  i: Integer;
+
+begin
+  Result := Format('%0.2f', [aValue]);
+  i := Length(Result);
+  while i > 0 do
+  begin
+    if Result[i] <> '0' then
+      Break;
+    Dec(i);
+  end;
+  Result := Copy(Result, 1, i);
+  i := Length(Result);
+  if (i > 0) and (CharInSet(Result[i], [',', '.'])) then
+    Result := Copy(Result, 1, i - 1);
+end;
+
 procedure TfmMain.edEQChange(Sender: TObject);
 begin
   if CalcThis then
   begin
     stResult.Font.Color := clYellow;
-    stResult.Caption    := Format('%0.2f', [LastResult / 100]);
+    stResult.Caption := GetResultStr(LastResult / 100);
   end
   else
   begin
@@ -130,19 +150,19 @@ begin
       end;
       if (ssShift in Shift) then
       begin
-        PDV       := Round(LastResult / 6);
-        SUM       := LastResult - PDV;
-        edEQ.Text := Format('%0.2f+%0.2f', [SUM / 100, PDV / 100]);
+        PDV := Round(LastResult / 6);
+        SUM := LastResult - PDV;
+        edEQ.Text := GetResultStr(SUM / 100) + '+' + GetResultStr(PDV / 100);
       end
       else
-        edEQ.Text := Format('%0.2f', [LastResult / 100]);
+        edEQ.Text := GetResultStr(LastResult / 100);
       edEQ.SelectAll;
     end;
   end
   else if (Key = VK_ESCAPE) then
   begin
-    Key              := 0;
-    edEQ.Text        := '';
+    Key := 0;
+    edEQ.Text := '';
     stResult.Caption := '';
   end
   else if (Key = VK_UP) then
