@@ -7,7 +7,7 @@ object fmMain: TfmMain
   Margins.Bottom = 2
   BorderIcons = []
   BorderStyle = bsNone
-  Caption = 'fmMain'
+  Caption = #1050#1072#1083#1100#1082#1091#1083#1103#1090#1086#1088
   ClientHeight = 26
   ClientWidth = 390
   Color = clBlack
@@ -19,6 +19,7 @@ object fmMain: TfmMain
   OldCreateOrder = False
   Position = poScreenCenter
   ScreenSnap = True
+  SnapBuffer = 3
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   PixelsPerInch = 96
