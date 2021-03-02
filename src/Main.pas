@@ -198,6 +198,13 @@ begin
   begin
     Key := 0;
     { TODO : Прокрутить список последних выражений на шаг вперед }
+  end
+  else if ((Key = Ord('T')) or (Key = Ord('t'))) and (Shift = [ssCtrl]) then
+  begin
+    if (fmMain.FormStyle = fsNormal) then
+      fmMain.FormStyle := fsStayOnTop
+    else
+      fmMain.FormStyle := fsNormal;
   end;
 end;
 

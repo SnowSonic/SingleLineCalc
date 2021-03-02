@@ -16,6 +16,7 @@ object fmMain: TfmMain
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
+  FormStyle = fsStayOnTop
   OldCreateOrder = False
   Position = poScreenCenter
   ScreenSnap = True
