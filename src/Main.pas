@@ -1,10 +1,13 @@
-unit Main;
+п»їunit Main;
 
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls,
-  ParseExpr, Vcl.Buttons, Vcl.ExtCtrls, Vcl.Imaging.pngimage;
+  Winapi.Windows, Winapi.Messages,
+  System.SysUtils, System.Variants, System.Classes,
+  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls,
+  Vcl.Imaging.pngimage,
+  ParseExpr;
 
 type
   TfmMain = class(TForm)
@@ -13,6 +16,7 @@ type
     Splitter: TSplitter;
     Image: TImage;
     procedure FormCreate(Sender: TObject);
+    procedure FormShow(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure edEQChange(Sender: TObject);
     procedure edEQKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -22,18 +26,17 @@ type
     EP: TExpressionParser;
     CalcDigits: Integer;
     CalcDozens: Int64;
-    EPLast: Integer; // Кол-во выражений
-    EPIndex: Integer; // Текущее выражение
+    EPLast: Integer; // РљРѕР»-РІРѕ РІС‹СЂР°Р¶РµРЅРёР№
+    EPIndex: Integer; // РўРµРєСѓС‰РµРµ РІС‹СЂР°Р¶РµРЅРёРµ
     Selected: boolean;
     LastResult: Int64;
-    // Расчет с указанием, записывать ли расчет в историю
+    // Р Р°СЃС‡РµС‚ СЃ СѓРєР°Р·Р°РЅРёРµРј, Р·Р°РїРёСЃС‹РІР°С‚СЊ Р»Рё СЂР°СЃС‡РµС‚ РІ РёСЃС‚РѕСЂРёСЋ
     function CalcThis(aStore: boolean = True): boolean;
-    // Отформатировать результат в формат текущего округления
+    // РћС‚С„РѕСЂРјР°С‚РёСЂРѕРІР°С‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚ РІ С„РѕСЂРјР°С‚ С‚РµРєСѓС‰РµРіРѕ РѕРєСЂСѓРіР»РµРЅРёСЏ
     function FormatResult(aValue: real; withZero: boolean = False): string;
-    // Обработчик колеса мышки
+    // РћР±СЂР°Р±РѕС‚С‡РёРє РєРѕР»РµСЃР° РјС‹С€РєРё
     procedure FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: boolean);
   public
-    { Public declarations }
   end;
 
 var
@@ -42,59 +45,100 @@ var
 implementation
 
 uses
-  StrUtils, Math;
+  System.StrUtils, System.Math, pm.VCLUtils;
 
-// По умолчанию укругление до 2-х знаков после запятой
+// РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ СѓРєСЂСѓРіР»РµРЅРёРµ РґРѕ 2-С… Р·РЅР°РєРѕРІ РїРѕСЃР»Рµ Р·Р°РїСЏС‚РѕР№
 const
   ciCalcDigits = 2;
-
 
 {$R *.dfm}
 
 procedure TfmMain.FormCreate(Sender: TObject);
 begin
-  // Если есть параметр запуска, то надеюсь что это задано сколько символов после запятой
+  // Р•СЃР»Рё РµСЃС‚СЊ РїР°СЂР°РјРµС‚СЂ Р·Р°РїСѓСЃРєР°, С‚Рѕ РЅР°РґРµСЋСЃСЊ С‡С‚Рѕ СЌС‚Рѕ Р·Р°РґР°РЅРѕ СЃРєРѕР»СЊРєРѕ СЃРёРјРІРѕР»РѕРІ РїРѕСЃР»Рµ Р·Р°РїСЏС‚РѕР№
   if ParamCount > 0 then
     CalcDigits := StrToIntDef(ParamStr(1), ciCalcDigits)
   else
     CalcDigits := ciCalcDigits;
-  // Сразу расчет сколько десятков для округления и деления
+  // РЎСЂР°Р·Сѓ СЂР°СЃС‡РµС‚ СЃРєРѕР»СЊРєРѕ РґРµСЃСЏС‚РєРѕРІ РґР»СЏ РѕРєСЂСѓРіР»РµРЅРёСЏ Рё РґРµР»РµРЅРёСЏ
   CalcDozens := Round(Power(10, CalcDigits));
-  // Создание расчетчика
+  // РЎРѕР·РґР°РЅРёРµ СЂР°СЃС‡РµС‚С‡РёРєР°
   EP := TExpressionParser.Create;
-  // Последний в списке
-  EPLast := -1;
-  // Индекс для переключения в списке по стрелкам
+  // РџРѕСЃР»РµРґРЅРёР№ РІ СЃРїРёСЃРєРµ
+  EPLast := - 1;
+  // РРЅРґРµРєСЃ РґР»СЏ РїРµСЂРµРєР»СЋС‡РµРЅРёСЏ РІ СЃРїРёСЃРєРµ РїРѕ СЃС‚СЂРµР»РєР°Рј
   EPIndex := - 1;
-  // пришиваем обработчик колеса мыши
+  // РїСЂРёС€РёРІР°РµРј РѕР±СЂР°Р±РѕС‚С‡РёРє РєРѕР»РµСЃР° РјС‹С€Рё
   OnMouseWheel := FormMouseWheel;
-  // Загрузить иконку приложения в картинку
+  // Р—Р°РіСЂСѓР·РёС‚СЊ РёРєРѕРЅРєСѓ РїСЂРёР»РѕР¶РµРЅРёСЏ РІ РєР°СЂС‚РёРЅРєСѓ
   Image.Width := Image.Height;
   //
   Selected := False;
+end;
 
-  { TODO : Чтение последнего расположения и размеров }
-  {
-  Прочитать данные о последнем положении и размере из реестра.
-  Если прочитались, то применить к форме.
-  Если впервые запускается, то сделать ширину окна Width * 15 и расположить по центру
-  }
+procedure TfmMain.FormShow(Sender: TObject);
+begin
+  LoadStateRegistry('SimpleCalc');
 end;
 
 procedure TfmMain.FormDestroy(Sender: TObject);
 begin
-  // Освобождаем ресурсы
+  SaveStateRegistry('SimpleCalc');
+  // РћСЃРІРѕР±РѕР¶РґР°РµРј СЂРµСЃСѓСЂСЃС‹
   EP.Free;
-  { TODO : Сохранение размеров и положения }
 end;
 
-procedure TfmMain.FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: boolean);
+procedure TfmMain.edEQChange(Sender: TObject);
 begin
-  // Размер калькулятора минимум 15 высот и максимум ширина экрана
-  if WheelDelta < 0 then
-    Width := Max(Width - Height, Height * 15)
-  else
-    Width := Min(Width + Height, Screen.Width);
+  Selected := False;
+  if CalcThis(False) then
+    stResult.Caption := FormatResult(LastResult / CalcDozens);
+end;
+
+procedure TfmMain.edEQKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  case Key of
+    VK_ADD, VK_SUBTRACT, VK_MULTIPLY, VK_DIVIDE:
+      if Selected then
+      begin
+        edEQ.SetFocus;
+        edEQ.SelStart := 999999;
+      end;
+    VK_RETURN:
+      begin
+        Key := 0;
+        if CalcThis then
+        begin
+          if (ssShift in Shift) then
+          begin
+            var PDV: Int64 := Round(LastResult / 6);
+            var SUM: Int64 := LastResult - PDV;
+            edEQ.Text := FormatResult(SUM / CalcDozens, True) + '+' + FormatResult(PDV / CalcDozens, True);
+          end
+          else
+            edEQ.Text := FormatResult(LastResult / CalcDozens);
+          edEQ.SelectAll;
+          Selected := True;
+        end;
+      end;
+    VK_ESCAPE:
+      begin
+        Key := 0;
+        edEQ.Text := '';
+        stResult.Caption := '';
+      end;
+  end;
+end;
+
+procedure TfmMain.ImageClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TfmMain.stResultMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  ReleaseCapture;
+  SendMessage(fmMain.Handle, WM_SYSCOMMAND, 61458, 0);
 end;
 
 function TfmMain.CalcThis(aStore: boolean): boolean;
@@ -102,23 +146,23 @@ var
   Exp: string;
 begin
   try
-    { DONE : Сделать обработку aStore. Сохранять или нет расчет в списке. }
-    // Заменить запятые на точки или на оборот, если другой разделитель десятичных и посчитать выражение
+    { DONE : РЎРґРµР»Р°С‚СЊ РѕР±СЂР°Р±РѕС‚РєСѓ aStore. РЎРѕС…СЂР°РЅСЏС‚СЊ РёР»Рё РЅРµС‚ СЂР°СЃС‡РµС‚ РІ СЃРїРёСЃРєРµ. }
+    // Р—Р°РјРµРЅРёС‚СЊ Р·Р°РїСЏС‚С‹Рµ РЅР° С‚РѕС‡РєРё РёР»Рё РЅР° РѕР±РѕСЂРѕС‚, РµСЃР»Рё РґСЂСѓРіРѕР№ СЂР°Р·РґРµР»РёС‚РµР»СЊ РґРµСЃСЏС‚РёС‡РЅС‹С… Рё РїРѕСЃС‡РёС‚Р°С‚СЊ РІС‹СЂР°Р¶РµРЅРёРµ
     if (FormatSettings.DecimalSeparator = ',') then
       Exp := ReplaceStr(edEQ.Text, '.', ',')
     else
       Exp := ReplaceStr(edEQ.Text, ',', '.');
-    // Сделать расчет
+    // РЎРґРµР»Р°С‚СЊ СЂР°СЃС‡РµС‚
     if aStore then
     begin
-      // Если с сохранением, до добавляем
+      // Р•СЃР»Рё СЃ СЃРѕС…СЂР°РЅРµРЅРёРµРј, РґРѕ РґРѕР±Р°РІР»СЏРµРј
       EPLast := EP.AddExpression(Exp);
       LastResult := Round(EP.AsFloat[EPLast] * CalcDozens);
     end
     else
-      // Если без сохранения, то просто расчет
+      // Р•СЃР»Рё Р±РµР· СЃРѕС…СЂР°РЅРµРЅРёСЏ, С‚Рѕ РїСЂРѕСЃС‚Рѕ СЂР°СЃС‡РµС‚
       LastResult := Round(EP.Evaluate(Exp) * CalcDozens);
-    // Последний результат окрулить до указанных знаков после запятой
+    // РџРѕСЃР»РµРґРЅРёР№ СЂРµР·СѓР»СЊС‚Р°С‚ РѕРєСЂСѓР»РёС‚СЊ РґРѕ СѓРєР°Р·Р°РЅРЅС‹С… Р·РЅР°РєРѕРІ РїРѕСЃР»Рµ Р·Р°РїСЏС‚РѕР№
     Result := True;
   except
     Result := False;
@@ -129,7 +173,7 @@ function TfmMain.FormatResult(aValue: real; withZero: boolean = False): string;
 var
   i: Integer;
 begin
-  Result := Format('%0.'+CalcDigits.toString+'f', [aValue]);
+  Result := Format('%0.' + CalcDigits.toString + 'f', [aValue]);
   if not withZero then
   begin
     i := Length(Result);
@@ -146,77 +190,13 @@ begin
   end;
 end;
 
-procedure TfmMain.edEQChange(Sender: TObject);
+procedure TfmMain.FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: boolean);
 begin
-  Selected := False;
-  if CalcThis(False) then
-    stResult.Caption := FormatResult(LastResult / CalcDozens);
-end;
-
-procedure TfmMain.edEQKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-var
-  SUM, PDV: Int64;
-begin
-  if (Key in [VK_ADD, VK_SUBTRACT, VK_MULTIPLY, VK_DIVIDE]) then
-  begin
-    // Если нажать +, -, * или / сразу после результата, то снимается выделение и курсор ставиться в конце строки
-    if Selected then
-    begin
-      edEQ.SetFocus;
-      edEQ.SelStart := 999999;
-    end;
-  end else
-  if (Key = VK_RETURN) then
-  begin
-    Key := 0;
-    if CalcThis then
-    begin
-      if (ssShift in Shift) then
-      begin
-        PDV := Round(LastResult / 6);
-        SUM := LastResult - PDV;
-        edEQ.Text := FormatResult(SUM / CalcDozens, True) + '+' + FormatResult(PDV / CalcDozens, True);
-      end
-      else
-        edEQ.Text := FormatResult(LastResult / CalcDozens);
-      edEQ.SelectAll;
-      Selected := True;
-    end;
-  end
-  else if (Key = VK_ESCAPE) then
-  begin
-    Key := 0;
-    edEQ.Text := '';
-    stResult.Caption := '';
-  end
-  else if (Key = VK_UP) then
-  begin
-    Key := 0;
-    { TODO : Прокрутить список последних выражений на шаг назад }
-  end
-  else if (Key = VK_DOWN) then
-  begin
-    Key := 0;
-    { TODO : Прокрутить список последних выражений на шаг вперед }
-  end
-  else if ((Key = Ord('T')) or (Key = Ord('t'))) and (Shift = [ssCtrl]) then
-  begin
-    if (fmMain.FormStyle = fsNormal) then
-      fmMain.FormStyle := fsStayOnTop
-    else
-      fmMain.FormStyle := fsNormal;
-  end;
-end;
-
-procedure TfmMain.ImageClick(Sender: TObject);
-begin
-  Close;
-end;
-
-procedure TfmMain.stResultMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-begin
-  ReleaseCapture;
-  SendMessage(fmMain.Handle, WM_SYSCOMMAND, 61458, 0);
+  // Р Р°Р·РјРµСЂ РєР°Р»СЊРєСѓР»СЏС‚РѕСЂР° РјРёРЅРёРјСѓРј 15 РІС‹СЃРѕС‚ Рё РјР°РєСЃРёРјСѓРј С€РёСЂРёРЅР° СЌРєСЂР°РЅР°
+  if WheelDelta < 0 then
+    Width := Max(Width - Height, Height * 15)
+  else
+    Width := Min(Width + Height, Screen.Width);
 end;
 
 end.

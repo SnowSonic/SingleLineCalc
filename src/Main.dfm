@@ -17,13 +17,12 @@ object fmMain: TfmMain
   Font.Name = 'Tahoma'
   Font.Style = []
   FormStyle = fsStayOnTop
-  OldCreateOrder = False
-  Position = poScreenCenter
+  Position = poDesigned
   ScreenSnap = True
   SnapBuffer = 3
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  PixelsPerInch = 96
+  OnShow = FormShow
   TextHeight = 13
   object Splitter: TSplitter
     Left = 285

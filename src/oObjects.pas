@@ -1,9 +1,13 @@
 unit OObjects;
+
 interface
-uses Classes;
+
+uses
+  Classes;
+
 const
 
-  {TOCollection interfaces between OWL TCollection and VCL TList}
+  { TOCollection interfaces between OWL TCollection and VCL TList }
   MaxCollectionSize = Maxint div (SizeOf(Integer) * 2);
 
 type
@@ -32,7 +36,7 @@ type
     function IndexOf(Item: Pointer): Integer; virtual;
     procedure Add(Item: Pointer); virtual;
     procedure AddReplace(Item: Pointer); virtual;
-    {if duplicate then replace the duplicate else add}
+    { if duplicate then replace the duplicate else add }
     function KeyOf(Item: Pointer): Pointer; virtual;
     function Search(Key: Pointer; var Index: Integer): Boolean; virtual;
   end;
@@ -47,13 +51,14 @@ type
 
 implementation
 
-uses SysUtils;
+uses
+  SysUtils;
 
 constructor TOCollection.Create(ACapacity: Integer);
 begin
   inherited Create;
   SetCapacity(ACapacity);
-  {Delta is automatic in TList}
+  { Delta is automatic in TList }
 end;
 
 destructor TOCollection.Destroy;
@@ -66,11 +71,10 @@ procedure TOCollection.AtFree(Index: Integer);
 var
   Item: Pointer;
 begin
-  Item := Items[Index];
-  Delete(Index);
+  Item := Items[index];
+  Delete(index);
   FreeItem(Item);
 end;
-
 
 procedure TOCollection.FreeAll;
 var
@@ -96,9 +100,9 @@ begin
       Free;
 end;
 
-{----------------------------------------------------------------virtual;
+{ ----------------------------------------------------------------virtual;
   Implementing TNoOwnerCollection
-  -----------------------------------------------------------------}
+  ----------------------------------------------------------------- }
 
 procedure TNoOwnerCollection.FreeItem(Item: Pointer);
 begin
@@ -126,13 +130,14 @@ function TSortedCollection.IndexOf(Item: Pointer): Integer;
 var
   I: Integer;
 begin
-  IndexOf := -1;
+  IndexOf := - 1;
   if Search(KeyOf(Item), I) then
   begin
     if Duplicates then
       while (I < Count) and (Item <> Items[I]) do
         Inc(I);
-    if I < Count then IndexOf := I;
+    if I < Count then
+      IndexOf := I;
   end;
 end;
 
@@ -140,8 +145,8 @@ procedure TSortedCollection.AddReplace(Item: Pointer);
 var
   Index: Integer;
 begin
-  if Search(KeyOf(Item), Index) then
-    Delete(Index);
+  if Search(KeyOf(Item), index) then
+    Delete(index);
   Add(Item);
 end;
 
@@ -177,18 +182,19 @@ begin
       if C = 0 then
       begin
         Search := True;
-        if not Duplicates then L := I;
+        if not Duplicates then
+          L := I;
       end;
     end;
   end;
-  Index := L;
+  index := L;
 end;
 
 { TStrCollection }
 
 function TStrCollection.Compare(Key1, Key2: Pointer): Integer;
 begin
-  Compare := AnsiCompareStr(String(Key1), String(Key2));
+  Compare := AnsiCompareStr(string(Key1), string(Key2));
 end;
 
 procedure TStrCollection.FreeItem(Item: Pointer);
@@ -197,4 +203,3 @@ begin
 end;
 
 end.
-

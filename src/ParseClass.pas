@@ -1,16 +1,19 @@
 unit ParseClass;
 
 interface
-uses OObjects, SysUtils;
+
+uses
+  OObjects, SysUtils;
+
 const
   MaxArg = 6;
+
 const
-  Nan: Double = 0/0;
-function isNan(const d:double):boolean;
+  Nan: Double = 0 / 0;
+function isNan(const d: Double): boolean;
 
 type
-  TVarType = (vtDouble, vtBoolean, vtString, vtLeftBracket, vtRightBracket,
-    vtComma);
+  TVarType = (vtDouble, vtBoolean, vtString, vtLeftBracket, vtRightBracket, vtComma);
   PDouble = ^Double;
   EParserException = class(Exception);
   PExpressionRec = ^TExpressionRec;
@@ -19,7 +22,7 @@ type
 
   TArgsArray = record
     Res: Double;
-    Args: array[0..MaxArg - 1] of PDouble;
+    Args: array [0 .. MaxArg - 1] of PDouble;
     ExprWord: TExprWord; //can be used to notify the object to update
   end;
 
@@ -34,11 +37,8 @@ type
     Res: Double;
     ExprWord: TExprWord;
     case Byte of
-      0: (
-        Args: array[0..MaxArg - 1] of PDouble;
-        //can be used to notify the object to update
-        );
-      1: (ArgList: array[0..MaxArg - 1] of PExpressionRec);
+      0: (Args: array [0 .. MaxArg - 1] of PDouble;); //can be used to notify the object to update
+      1: (ArgList: array [0 .. MaxArg - 1] of PExpressionRec);
   end;
 
   TExprCollection = class(TNoOwnerCollection)
@@ -53,10 +53,10 @@ type
     FName: string;
     FDoubleFunc: TDoubleFunc;
   protected
-    function GetIsOper: Boolean; virtual;
+    function GetIsOper: boolean; virtual;
     function GetAsString: string; virtual;
-    function GetIsVariable: Boolean;
-    function GetCanVary: Boolean; virtual;
+    function GetIsVariable: boolean;
+    function GetCanVary: boolean; virtual;
     function GetVarType: TVarType; virtual;
     function GetNFunctionArg: Integer; virtual;
     function GetDescription: string; virtual;
@@ -65,12 +65,12 @@ type
     function AsPointer: PDouble; virtual;
     property AsString: string read GetAsString;
     property DoubleFunc: TDoubleFunc read FDoubleFunc;
-    property IsOper: Boolean read GetIsOper;
-    property CanVary: Boolean read GetCanVary;
-    property isVariable: Boolean read GetIsVariable;
+    property IsOper: boolean read GetIsOper;
+    property CanVary: boolean read GetCanVary;
+    property isVariable: boolean read GetIsVariable;
     property VarType: TVarType read GetVarType;
     property NFunctionArg: Integer read GetNFunctionArg;
-    property Name: string read FName;
+    property name: string read FName;
     property Description: string read GetDescription;
   end;
 
@@ -112,7 +112,7 @@ type
   protected
     function GetVarType: TVarType; override;
     function GetAsString: string; override;
-    function GetCanVary: Boolean; override;
+    function GetCanVary: boolean; override;
   public
     constructor Create(AName: string);
     property VarType read GetVarType write FVarType;
@@ -123,7 +123,7 @@ type
   private
     FValue: PDouble;
   protected
-    function GetCanVary: Boolean; override;
+    function GetCanVary: boolean; override;
   public
     function AsPointer: PDouble; override;
     constructor Create(AName: string; AValue: PDouble);
@@ -154,32 +154,31 @@ type
   end;
 
   PString = ^string;
+
   TStringVariable = class(TExprWord)
   private
     FValue: PString;
   protected
     function GetVarType: TVarType; override;
     function GetAsString: string; override;
-    function GetCanVary: Boolean; override;
+    function GetCanVary: boolean; override;
   public
     constructor Create(AName: string; AValue: PString);
   end;
 
   TFunction = class(TExprWord)
   private
-    FIsOper: Boolean;
+    FIsOper: boolean;
     FOperPrec: Integer;
     FNFunctionArg: Integer;
     FDescription: string;
   protected
     function GetDescription: string; override;
-    function GetIsOper: Boolean; override;
+    function GetIsOper: boolean; override;
     function GetNFunctionArg: Integer; override;
   public
-    constructor Create(AName, Descr: string; ADoubleFunc: TDoubleFunc;
-      ANFunctionArg: Integer);
-    constructor CreateOper(AName: string; ADoubleFunc: TDoubleFunc;
-      ANFunctionArg: Integer; AIsOper: Boolean; AOperPrec: Integer);
+    constructor Create(AName, Descr: string; ADoubleFunc: TDoubleFunc; ANFunctionArg: Integer);
+    constructor CreateOper(AName: string; ADoubleFunc: TDoubleFunc; ANFunctionArg: Integer; AIsOper: boolean; AOperPrec: Integer);
     property OperPrec: Integer read FOperPrec;
   end;
 
@@ -188,7 +187,7 @@ type
     // should be TVaryingFunction to be sure that they are
     // always evaluated
   protected
-    function GetCanVary: Boolean; override;
+    function GetCanVary: boolean; override;
   end;
 
   TBooleanFunction = class(TFunction)
@@ -199,9 +198,10 @@ type
   TOper = (op_eq, op_gt, op_lt, op_ge, op_le, op_in);
 
 const
-  ListChar = ','; {the delimiter used with the 'in' operator: e.g.,
+  ListChar = ','; { the delimiter used with the 'in' operator: e.g.,
   ('a' in 'a,b') =True
-  ('c' in 'a,b') =False}
+  ('c' in 'a,b') =False }
+
 type
   TSimpleStringFunction = class(TFunction)
   private
@@ -209,25 +209,23 @@ type
     FLeftArg: TExprWord;
     FRightArg: TExprWord;
   protected
-    function GetCanVary: Boolean; override;
+    function GetCanVary: boolean; override;
   public
-    constructor Create(AName, Descr: string; AStringFunc:TStringFunc; ALeftArg, ARightArg:
-      TExprWord);
+    constructor Create(AName, Descr: string; AStringFunc: TStringFunc; ALeftArg, ARightArg: TExprWord);
     function Evaluate: Double;
-    property StringFunc:TStringFunc read FStringFunc;
+    property StringFunc: TStringFunc read FStringFunc;
   end;
 
-  TVaryingStringFunction=class(TSimpleStringFunction)
+  TVaryingStringFunction = class(TSimpleStringFunction)
   protected
-    function GetCanVary: Boolean; override;
+    function GetCanVary: boolean; override;
   end;
 
   TLogicalStringOper = class(TSimpleStringFunction)
   protected
     function GetVarType: TVarType; override;
   public
-    constructor Create(AOper: string; ALeftArg: TExprWord;
-      ARightArg: TExprWord);
+    constructor Create(AOper: string; ALeftArg: TExprWord; ARightArg: TExprWord);
   end;
 
 procedure _Variable(Param: PExpressionRec);
@@ -240,10 +238,9 @@ implementation
 
 //function _StrInt(a, b: string): Double;
 
-
-function isNan(const d:double):boolean;
+function isNan(const d: Double): boolean;
 begin
-  Result:=comp(d)=comp(nan);
+  Result := comp(d) = comp(Nan);
   //slower alternative: CompareMem(@d, @Nan, SizeOf(Double))
 end;
 
@@ -261,7 +258,7 @@ end;
 
 function _StrInt(a, b: string): Double;
 begin
-  result:=StrToInt(a);
+  Result := StrToInt(a);
 end;
 
 function _StrEq(s1, s2: string): Double;
@@ -316,7 +313,6 @@ begin
     Result := 1;
 end;
 
-
 { TExpressionWord }
 
 function TExprWord.AsPointer: PDouble;
@@ -335,7 +331,7 @@ begin
   Result := '';
 end;
 
-function TExprWord.GetCanVary: Boolean;
+function TExprWord.GetCanVary: boolean;
 begin
   Result := False;
 end;
@@ -345,12 +341,12 @@ begin
   Result := '';
 end;
 
-function TExprWord.GetIsOper: Boolean;
+function TExprWord.GetIsOper: boolean;
 begin
   Result := False;
 end;
 
-function TExprWord.GetIsVariable: Boolean;
+function TExprWord.GetIsVariable: boolean;
 begin
   Result := @FDoubleFunc = @_Variable
 end;
@@ -421,23 +417,21 @@ begin
   FValue := AValue;
 end;
 
-function TDoubleVariable.GetCanVary: Boolean;
+function TDoubleVariable.GetCanVary: boolean;
 begin
   Result := True;
 end;
 
 { TFunction }
 
-constructor TFunction.Create(AName, Descr: string; ADoubleFunc: TDoubleFunc;
-  ANFunctionArg: Integer);
+constructor TFunction.Create(AName, Descr: string; ADoubleFunc: TDoubleFunc; ANFunctionArg: Integer);
 begin
   FDescription := Descr;
   CreateOper(AName, ADoubleFunc, ANFunctionArg, False, 0);
   //to increase compatibility don't use default parameters
 end;
 
-constructor TFunction.CreateOper(AName: string; ADoubleFunc: TDoubleFunc;
-  ANFunctionArg: Integer; AIsOper: Boolean; AOperPrec: Integer);
+constructor TFunction.CreateOper(AName: string; ADoubleFunc: TDoubleFunc; ANFunctionArg: Integer; AIsOper: boolean; AOperPrec: Integer);
 begin
   inherited Create(AName, ADoubleFunc);
   FNFunctionArg := ANFunctionArg;
@@ -452,7 +446,7 @@ begin
   Result := FDescription;
 end;
 
-function TFunction.GetIsOper: Boolean;
+function TFunction.GetIsOper: boolean;
 begin
   Result := FIsOper;
 end;
@@ -505,8 +499,10 @@ begin
   for I := 0 to Count - 1 do
   begin
     case TExprWord(Items[I]).VarType of
-      vtLeftBracket: Inc(brCount);
-      vtRightBracket: Dec(brCount);
+      vtLeftBracket:
+        Inc(brCount);
+      vtRightBracket:
+        Dec(brCount);
     end;
   end;
   if brCount <> 0 then
@@ -525,13 +521,14 @@ begin
     while (I < Count) and (brCount > 0) do
     begin
       case TExprWord(Items[I]).VarType of
-        vtLeftBracket: Inc(brCount);
-        vtRightBracket: Dec(brCount);
+        vtLeftBracket:
+          Inc(brCount);
+        vtRightBracket:
+          Dec(brCount);
       end;
       Inc(I);
     end;
-    if (brCount = 0) and (I = Count) and (TExprWord(Items[I - 1]).VarType =
-      vtRightBracket) then
+    if (brCount = 0) and (I = Count) and (TExprWord(Items[I - 1]).VarType = vtRightBracket) then
     begin
       for I := 0 to Count - 3 do
         Items[I] := Items[I + 1];
@@ -547,12 +544,13 @@ var
 begin
   brCount := 0;
   Result := IStart;
-  while (Result < Count) and ((brCount > 0) or
-    (TExprWord(Items[Result]).NFunctionArg <= 0)) do
+  while (Result < Count) and ((brCount > 0) or (TExprWord(Items[Result]).NFunctionArg <= 0)) do
   begin
     case TExprWord(Items[Result]).VarType of
-      vtLeftBracket: Inc(brCount);
-      vtRightBracket: Dec(brCount);
+      vtLeftBracket:
+        Inc(brCount);
+      vtRightBracket:
+        Dec(brCount);
     end;
     Inc(Result);
   end;
@@ -579,35 +577,39 @@ begin
   Result := vtString;
 end;
 
-function TStringVariable.GetCanVary: Boolean;
+function TStringVariable.GetCanVary: boolean;
 begin
   Result := True;
 end;
 
 { TLogicalStringOper }
 
-constructor TLogicalStringOper.Create(AOper: string; ALeftArg,
-  ARightArg: TExprWord);
+constructor TLogicalStringOper.Create(AOper: string; ALeftArg, ARightArg: TExprWord);
 begin
   if AOper = '=' then
-    FStringFunc := @_streq
-  else if AOper = '>' then
-    FStringFunc := @_strgt
-  else if AOper = '<' then
-    FStringFunc := @_strlt
-  else if AOper = '>=' then
-    FStringFunc := @_strge
-  else if AOper = '<=' then
-    FStringFunc := @_strle
-  else if AOper = '<>' then
-    FStringFunc := @_strne
-  else if AOper = 'in' then
-    FStringFunc := @_strin
+    FStringFunc := @_StrEq
   else
-    raise EParserException.Create(AOper + ' is not a valid string operand');
-  inherited Create(AOper,'',StringFunc,ALeftArg,ARightArg);
+    if AOper = '>' then
+      FStringFunc := @_StrGt
+    else
+      if AOper = '<' then
+        FStringFunc := @_Strlt
+      else
+        if AOper = '>=' then
+          FStringFunc := @_StrGe
+        else
+          if AOper = '<=' then
+            FStringFunc := @_Strle
+          else
+            if AOper = '<>' then
+              FStringFunc := @_Strne
+            else
+              if AOper = 'in' then
+                FStringFunc := @_StrIn
+              else
+                raise EParserException.Create(AOper + ' is not a valid string operand');
+  inherited Create(AOper, '', StringFunc, ALeftArg, ARightArg);
 end;
-
 
 function TLogicalStringOper.GetVarType: TVarType;
 begin
@@ -635,7 +637,7 @@ begin
   Result := FAsString;
 end;
 
-function TGeneratedVariable.GetCanVary: Boolean;
+function TGeneratedVariable.GetCanVary: boolean;
 begin
   Result := True;
 end;
@@ -647,7 +649,7 @@ end;
 
 { TVaryingFunction }
 
-function TVaryingFunction.GetCanVary: Boolean;
+function TVaryingFunction.GetCanVary: boolean;
 begin
   Result := True;
 end;
@@ -674,13 +676,12 @@ end;
 
 { TSimpleStringFunction }
 
-constructor TSimpleStringFunction.Create(AName, Descr: string; AStringFunc:TStringFunc;
-  ALeftArg, ARightArg: TExprWord);
+constructor TSimpleStringFunction.Create(AName, Descr: string; AStringFunc: TStringFunc; ALeftArg, ARightArg: TExprWord);
 begin
   FStringFunc := @AStringFunc;
   FLeftArg := ALeftArg;
   FRightArg := ARightArg;
-  inherited Create(AName, Descr, _StringFunc,0)
+  inherited Create(AName, Descr, _StringFunc, 0)
 end;
 
 function TSimpleStringFunction.Evaluate: Double;
@@ -695,16 +696,15 @@ begin
   Result := StringFunc(s1, s2);
 end;
 
-function TSimpleStringFunction.GetCanVary: Boolean;
+function TSimpleStringFunction.GetCanVary: boolean;
 begin
-  Result := ((FLeftArg<>nil) and FLeftArg.CanVary) or ((FRightArg<>nil) and FRightArg.CanVary);
+  Result := ((FLeftArg <> nil) and FLeftArg.CanVary) or ((FRightArg <> nil) and FRightArg.CanVary);
 end;
 { TVaryingStringFunction }
 
-function TVaryingStringFunction.GetCanVary: Boolean;
+function TVaryingStringFunction.GetCanVary: boolean;
 begin
-  Result:=True;
+  Result := True;
 end;
 
 end.
-

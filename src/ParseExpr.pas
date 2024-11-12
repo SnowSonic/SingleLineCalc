@@ -1,5 +1,6 @@
 unit ParseExpr;
-{--------------------------------------------------------------
+
+{ --------------------------------------------------------------
 | TExpressionParser
 | a flexible and fast expression parser for logical and
 | mathematical functions
@@ -107,16 +108,16 @@ unit ParseExpr;
 |  instead of math exceptions (see: NAN directive)
 |  using this option makes the evaluator somewhat slower
 |
-|---------------------------------------------------------------}
+|--------------------------------------------------------------- }
 interface
-{.$DEFINE NAN}
-{use this directive to suppress math exceptions,
-instead NAN is returned.
-Note that using this directive is less efficient}
 
-uses OObjects, Classes, ParseClass;
+{ .$DEFINE NAN }
+{ Use this directive to suppress math exceptions, instead NAN is returned. Note that using this directive is less efficient }
+
+uses
+  OObjects, Classes, ParseClass;
+
 type
-
 
   TCustomExpressionParser = class
   private
@@ -136,8 +137,7 @@ type
     procedure Check(AnExprList: TExprCollection);
     function CheckArguments(ExprRec: PExpressionRec): Boolean;
     procedure DisposeTree(ExprRec: PExpressionRec);
-    function EvaluateDisposeTree(ExprRec: PExpressionRec; var isBool: Boolean):
-      Double;
+    function EvaluateDisposeTree(ExprRec: PExpressionRec; var isBool: Boolean): Double;
     function EvaluateList(ARec: PExpressionRec): Double;
     function RemoveConstants(ExprRec: PExpressionRec): PExpressionRec;
     function ResultCanVary(ExprRec: PExpressionRec): Boolean;
@@ -155,10 +155,8 @@ type
     procedure AddReplaceExprWord(AExprWord: TExprWord);
     procedure DefineVariable(AVarName: string; AValue: PDouble);
     procedure DefineStringVariable(AVarName: string; AValue: PString);
-    procedure DefineFunction(AFunctName, ADescription: string; AFuncAddress:
-      TDoubleFunc; NArguments: Integer);
-    procedure DefineStringFunction(AFunctName, ADescription: string;
-      AFuncAddress: TStringFunc);
+    procedure DefineFunction(AFunctName, ADescription: string; AFuncAddress: TDoubleFunc; NArguments: Integer);
+    procedure DefineStringFunction(AFunctName, ADescription: string; AFuncAddress: TStringFunc);
     procedure ReplaceFunction(OldName: string; AFunction: TObject);
     function Evaluate(AnExpression: string): Double;
     function EvaluateCurrent: Double; //fastest
@@ -192,7 +190,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    function AddExpression(AnExpression: string): Integer;  override;
+    function AddExpression(AnExpression: string): Integer; override;
     procedure ClearExpressions; override;
     property ExpressionSize[AIndex: Integer]: Integer read GetExprSize;
     property Expression[AIndex: Integer]: string read GetExpression;
@@ -203,14 +201,14 @@ type
     property CurrentIndex: Integer read FCurrentIndex write FCurrentIndex;
   end;
 
-  {------------------------------------------------------------------
+  { ------------------------------------------------------------------
   Example of creating a user-defined Parser,
   here are Pascal operators replaced by C++ style,
   note that sometimes the ParseString function needs to be changed,
   if you define new operators (characters).
   Also some special checks do not work: like 'not not x' should be
   replaced by 'x', but this does not work with !!x (c style)
-  --------------------------------------------------------------------}
+  -------------------------------------------------------------------- }
   TCStyleParser = class(TExpressionParser)
     FCStyle: Boolean;
   private
@@ -222,10 +220,12 @@ type
   end;
 
 implementation
-uses Math,SysUtils ;
+
+uses
+  Math, SysUtils;
 
 const
-  errorPrefix='Error in math expression: ';
+  errorPrefix = 'Error in math expression: ';
 
 procedure _Power(Param: PExpressionRec);
 begin
@@ -238,9 +238,9 @@ begin
       Res := Power(Args[0]^, Args[1]^);
 end;
 
-function _Pos(str1,str2:string):double;
+function _Pos(str1, str2: string): Double;
 begin
-  result:=pos(str1,str2);
+  result := pos(str1, str2);
 end;
 
 procedure _IntPower(Param: PExpressionRec);
@@ -357,13 +357,13 @@ end;
 procedure _negate(Param: PExpressionRec);
 begin
   with Param^ do
-    Res := -Args[0]^;
+    Res := - Args[0]^;
 end;
 
 procedure _plus(Param: PExpressionRec);
 begin
   with Param^ do
-    Res := +Args[0]^;
+    Res := + Args[0]^;
 end;
 
 procedure _exp(Param: PExpressionRec);
@@ -574,10 +574,11 @@ procedure _factorial(Param: PExpressionRec);
   function Factorial(X: Extended): Extended;
   begin
     if X <= 1.1 then
-      Result := 1
+      result := 1
     else
-      Result := X * Factorial(X - 1);
+      result := X * Factorial(X - 1);
   end;
+
 begin
   with Param^ do
     Res := Factorial(Round(Args[0]^));
@@ -639,8 +640,7 @@ end;
 
 { TCustomExpressionParser }
 
-function TCustomExpressionParser.CompileExpression(AnExpression: string):
-  Boolean;
+function TCustomExpressionParser.CompileExpression(AnExpression: string): Boolean;
 var
   ExpColl: TExprCollection;
   ExprTree: PExpressionRec;
@@ -656,15 +656,15 @@ begin
     if CheckArguments(ExprTree) then
     begin
       if Optimize then
-      try
-        ExprTree := RemoveConstants(ExprTree);
-      except
-        on EMathError do
-        begin
-          ExprTree := nil;
-          raise;
+        try
+          ExprTree := RemoveConstants(ExprTree);
+        except
+          on EMathError do
+          begin
+            ExprTree := nil;
+            raise;
+          end;
         end;
-      end;
       // all constant expressions are evaluated and replaced by variables
       if ExprTree.ExprWord.isVariable then
         CurrentRec := ExprTree
@@ -672,14 +672,13 @@ begin
         MakeLinkedList(ExprTree);
     end
     else
-      raise
-        EParserException.Create(errorprefix+'Syntax error: function or operand has too few arguments');
+      raise EParserException.Create(errorPrefix + 'Syntax error: function or operand has too few arguments');
   except
     ExpColl.Free;
     DisposeTree(ExprTree);
     raise;
   end;
-  Result := True;
+  result := True;
 end;
 
 constructor TCustomExpressionParser.Create;
@@ -701,55 +700,52 @@ begin
   ClearExpressions;
 end;
 
-function TCustomExpressionParser.CheckArguments(ExprRec: PExpressionRec):
-  Boolean;
+function TCustomExpressionParser.CheckArguments(ExprRec: PExpressionRec): Boolean;
 var
   I: Integer;
 begin
   with ExprRec^ do
   begin
-    Result := True;
+    result := True;
     for I := 0 to ExprWord.NFunctionArg - 1 do
       if Args[I] = nil then
       begin
-        Result := False;
+        result := False;
         Exit;
       end
       else
       begin
-        Result := CheckArguments(ArgList[I]);
-        if not Result then
+        result := CheckArguments(ArgList[I]);
+        if not result then
           Exit;
       end;
   end;
 end;
 
-function TCustomExpressionParser.ResultCanVary(ExprRec: PExpressionRec):
-  Boolean;
+function TCustomExpressionParser.ResultCanVary(ExprRec: PExpressionRec): Boolean;
 var
   I: Integer;
 begin
   with ExprRec^ do
   begin
-    Result := ExprWord.CanVary;
-    if not Result then
+    result := ExprWord.CanVary;
+    if not result then
       for I := 0 to ExprWord.NFunctionArg - 1 do
         if ResultCanVary(ArgList[I]) then
         begin
-          Result := True;
+          result := True;
           Exit;
         end
   end;
 end;
 
-function TCustomExpressionParser.RemoveConstants(ExprRec: PExpressionRec):
-  PExpressionRec;
+function TCustomExpressionParser.RemoveConstants(ExprRec: PExpressionRec): PExpressionRec;
 var
   I: Integer;
   isBool: Boolean;
   D: Double;
 begin
-  Result := ExprRec;
+  result := ExprRec;
   with ExprRec^ do
   begin
     if not ResultCanVary(ExprRec) then
@@ -757,15 +753,15 @@ begin
       if not ExprWord.isVariable then
       begin
         D := EvaluateDisposeTree(ExprRec, isBool);
-        Result := MakeRec;
+        result := MakeRec;
         if isBool then
-          Result.ExprWord := TBooleanConstant.CreateAsDouble('', D)
+          result.ExprWord := TBooleanConstant.CreateAsDouble('', D)
         else
-          Result.ExprWord := TDoubleConstant.CreateAsDouble('', D);
+          result.ExprWord := TDoubleConstant.CreateAsDouble('', D);
         //TDoubleConstant(Result.ExprWord).Value := D;
-        Result.Oper := Result.ExprWord.DoubleFunc;
-        Result.Args[0] := Result.ExprWord.AsPointer;
-        ConstantsList.Add(Result.ExprWord);
+        result.Oper := result.ExprWord.DoubleFunc;
+        result.Args[0] := result.ExprWord.AsPointer;
+        ConstantsList.Add(result.ExprWord);
       end;
     end
     else
@@ -788,8 +784,7 @@ begin
     end;
 end;
 
-function TCustomExpressionParser.EvaluateDisposeTree(ExprRec: PExpressionRec; var
-  isBool: Boolean): Double;
+function TCustomExpressionParser.EvaluateDisposeTree(ExprRec: PExpressionRec; var isBool: Boolean): Double;
 begin
   if ExprRec.ExprWord.isVariable then
     CurrentRec := ExprRec
@@ -797,15 +792,14 @@ begin
     MakeLinkedList(ExprRec);
   isBool := isBoolean;
   try
-    Result := EvaluateList(CurrentRec);
+    result := EvaluateList(CurrentRec);
   finally
     DisposeList(CurrentRec);
     CurrentRec := nil;
   end;
 end;
 
-function TCustomExpressionParser.MakeLinkedList(ExprRec: PExpressionRec):
-  PDouble;
+function TCustomExpressionParser.MakeLinkedList(ExprRec: PExpressionRec): PDouble;
 var
   I: Integer;
 begin
@@ -813,14 +807,14 @@ begin
   begin
     for I := 0 to ExprWord.NFunctionArg - 1 do
       Args[I] := MakeLinkedList(ArgList[I]);
-    if ExprWord.isVariable {@Oper = @_Variable} then
+    if ExprWord.isVariable { @Oper = @_Variable } then
     begin
-      Result := Args[0];
+      result := Args[0];
       Dispose(ExprRec);
     end
     else
     begin
-      Result := @Res;
+      result := @Res;
       if CurrentRec = nil then
       begin
         CurrentRec := ExprRec;
@@ -835,11 +829,10 @@ begin
   end;
 end;
 
-function TCustomExpressionParser.MakeTree(var Expr: TExprCollection):
-  PExpressionRec;
-{This is the most complex routine, it breaks down the expression and makes
+function TCustomExpressionParser.MakeTree(var Expr: TExprCollection): PExpressionRec;
+{ This is the most complex routine, it breaks down the expression and makes
 a linked tree which is used for fast function evaluations
-it is implemented recursively}
+it is implemented recursively }
 var
   I, IArg, IStart, IEnd, brCount: Integer;
   FirstOper: TExprWord;
@@ -849,42 +842,41 @@ begin
   FirstOper := nil;
   IStart := 0;
   try
-    Result := nil;
+    result := nil;
     repeat
       Rec := MakeRec;
-      if Result <> nil then
+      if result <> nil then
       begin
         IArg := 1;
-        Rec.ArgList[0] := Result;
+        Rec.ArgList[0] := result;
       end
       else
         IArg := 0;
-      Result := Rec;
+      result := Rec;
       Expr.EraseExtraBrackets;
       if Expr.Count = 1 then
       begin
-        Result.ExprWord := TExprWord(Expr.Items[0]);
-        Result.Oper := @Result.ExprWord.DoubleFunc;
-        if not Result.ExprWord.isVariable then
-          Result.Oper := @Result.ExprWord.DoubleFunc
+        result.ExprWord := TExprWord(Expr.Items[0]);
+        result.Oper := @result.ExprWord.DoubleFunc;
+        if not result.ExprWord.isVariable then
+          result.Oper := @result.ExprWord.DoubleFunc
         else
         begin
-          Result.Args[0] := Result.ExprWord.AsPointer;
+          result.Args[0] := result.ExprWord.AsPointer;
         end;
         Exit;
       end;
       IEnd := Expr.NextOper(IStart);
       if IEnd = Expr.Count then
-        raise EParserException.Create(errorprefix+'Syntax error in expression ' +
-          CurrentExpression);
+        raise EParserException.Create(errorPrefix + 'Syntax error in expression ' + CurrentExpression);
       if TExprWord(Expr.Items[IEnd]).NFunctionArg > 0 then
       begin
         FirstOper := TExprWord(Expr.Items[IEnd]);
-        Result.ExprWord := FirstOper;
-        Result.Oper := FirstOper.DoubleFunc;
+        result.ExprWord := FirstOper;
+        result.Oper := FirstOper.DoubleFunc;
       end
       else
-        raise EParserException.Create(errorprefix+'Can not find operand/function');
+        raise EParserException.Create(errorPrefix + 'Can not find operand/function');
       if not FirstOper.IsOper then
       begin // parse function arguments
         IArg := 0;
@@ -898,45 +890,47 @@ begin
         begin
           Inc(IEnd);
           case TExprWord(Expr.Items[IEnd]).VarType of
-            vtLeftBracket: Inc(brCount);
+            vtLeftBracket:
+              Inc(brCount);
             vtComma:
               if brCount = 1 then
               begin
                 Expr2 := TExprCollection.Create(IEnd - IStart);
                 for I := IStart + 1 to IEnd - 1 do
                   Expr2.Add(Expr.Items[I]);
-                Result.ArgList[IArg] := MakeTree(Expr2);
+                result.ArgList[IArg] := MakeTree(Expr2);
                 Inc(IArg);
                 IStart := IEnd;
               end;
-            vtRightBracket: Dec(brCount);
+            vtRightBracket:
+              Dec(brCount);
           end;
         end;
         Expr2 := TExprCollection.Create(IEnd - IStart + 1);
         for I := IStart + 1 to IEnd - 1 do
           Expr2.Add(Expr.Items[I]);
-        Result.ArgList[IArg] := MakeTree(Expr2);
+        result.ArgList[IArg] := MakeTree(Expr2);
       end
-      else if IEnd - IStart > 0 then
-      begin
-        Expr2 := TExprCollection.Create(IEnd - IStart + 1);
-        for I := 0 to IEnd - 1 do
-          Expr2.Add(Expr.Items[I]);
-        Result.ArgList[IArg] := MakeTree(Expr2);
-        Inc(IArg);
-      end;
+      else
+        if IEnd - IStart > 0 then
+        begin
+          Expr2 := TExprCollection.Create(IEnd - IStart + 1);
+          for I := 0 to IEnd - 1 do
+            Expr2.Add(Expr.Items[I]);
+          result.ArgList[IArg] := MakeTree(Expr2);
+          Inc(IArg);
+        end;
       IStart := IEnd + 1;
       IEnd := IStart - 1;
       repeat
         IEnd := Expr.NextOper(IEnd + 1);
-      until (IEnd >= Expr.Count) or
-        (TFunction(Expr.Items[IEnd]).OperPrec >= TFunction(FirstOper).OperPrec);
+      until (IEnd >= Expr.Count) or (TFunction(Expr.Items[IEnd]).OperPrec >= TFunction(FirstOper).OperPrec);
       if IEnd <> IStart then
       begin
         Expr2 := TExprCollection.Create(IEnd);
         for I := IStart to IEnd - 1 do
           Expr2.Add(Expr.Items[I]);
-        Result.ArgList[IArg] := MakeTree(Expr2);
+        result.ArgList[IArg] := MakeTree(Expr2);
       end;
       IStart := IEnd;
     until IEnd >= Expr.Count;
@@ -946,8 +940,7 @@ begin
   end;
 end;
 
-function TCustomExpressionParser.ParseString(AnExpression: string):
-  TExprCollection;
+function TCustomExpressionParser.ParseString(AnExpression: string): TExprCollection;
 var
   isConstant: Boolean;
   I, I1, I2, Len: Integer;
@@ -957,15 +950,14 @@ var
   procedure ReadConstant(AnExpr: string; isHex: Boolean);
   begin
     isConstant := True;
-    while (I2 <= Len) and ((AnExpr[I2] in ['0'..'9']) or
-      (isHex and (AnExpr[I2] in ['a'..'f']))) do
+    while (I2 <= Len) and ((AnExpr[I2] in ['0' .. '9']) or (isHex and (AnExpr[I2] in ['a' .. 'f']))) do
       Inc(I2);
     if I2 <= Len then
     begin
       if AnExpr[I2] = DecimSeparator then
       begin
         Inc(I2);
-        while (I2 <= Len) and (AnExpr[I2] in ['0'..'9']) do
+        while (I2 <= Len) and (AnExpr[I2] in ['0' .. '9']) do
           Inc(I2);
       end;
       if (I2 <= Len) and (AnExpr[I2] = 'e') then
@@ -973,7 +965,7 @@ var
         Inc(I2);
         if (I2 <= Len) and (AnExpr[I2] in ['+', '-']) then
           Inc(I2);
-        while (I2 <= Len) and (AnExpr[I2] in ['0'..'9']) do
+        while (I2 <= Len) and (AnExpr[I2] in ['0' .. '9']) do
           Inc(I2);
       end;
     end;
@@ -997,97 +989,99 @@ var
         if I2 = OldI2 then
         begin
           isConstant := False;
-          while (I2 <= Len) and (AnExpr[I2] in ['a'..'z', '_', '0'..'9']) do
+          while (I2 <= Len) and (AnExpr[I2] in ['a' .. 'z', '_', '0' .. '9']) do
             Inc(I2);
         end;
       end
-      else if AnExpr[I2] = DecimSeparator then
-        ReadConstant(AnExpr, False)
       else
-        case AnExpr[I2] of
-          '''':
-            begin
-              isConstant := True;
-              Inc(I2);
-              while (I2 <= Len) and (AnExpr[I2] <> '''') do
-                Inc(I2);
-              if I2 <= Len then
-                Inc(I2);
-            end;
-          'a'..'z', '_':
-            begin
-              while (I2 <= Len) and (AnExpr[I2] in ['a'..'z', '_', '0'..'9']) do
-                Inc(I2);
-            end;
-          '>', '<':
-            begin
-              if (I2 <= Len) then
-                Inc(I2);
-              if AnExpr[I2] in ['=', '<', '>'] then
-                Inc(I2);
-            end;
-          '=':
-            begin
-              if (I2 <= Len) then
-                Inc(I2);
-              if AnExpr[I2] in ['<', '>', '='] then
-                Inc(I2);
-            end;
-          '&':
-            begin
-              if (I2 <= Len) then
-                Inc(I2);
-              if AnExpr[I2] in ['&'] then
-                Inc(I2);
-            end;
-          '|':
-            begin
-              if (I2 <= Len) then
-                Inc(I2);
-              if AnExpr[I2] in ['|'] then
-                Inc(I2);
-            end;
-          ':':
-            begin
-              if (I2 <= Len) then
-                Inc(I2);
-              if AnExpr[I2] = '=' then
-                Inc(I2);
-            end;
-          '!':
-            begin
-              if (I2 <= Len) then
-                Inc(I2);
-              if AnExpr[I2] = '=' then //support for !=
-                Inc(I2);
-            end;
-          '+':
-            begin
-              Inc(I2);
-              if (I2 <= Len)and(AnExpr[I2] = '+') and WordsList.Search(pchar('++'), I) then
-                Inc(I2);
-            end;
-          '-':
-            begin
-              Inc(I2);
-              if (I2 <= Len) and (AnExpr[I2] = '-') and WordsList.Search(pchar('--'), I) then
-                Inc(I2);
-            end;
-          '^', '/', '\', '*', '(', ')', '%', '~', '$':
-            Inc(I2);
-          '0'..'9':
-            ReadConstant(AnExpr, False);
+        if AnExpr[I2] = DecimSeparator then
+          ReadConstant(AnExpr, False)
         else
-          begin
-            Inc(I2);
+          case AnExpr[I2] of
+            '''':
+              begin
+                isConstant := True;
+                Inc(I2);
+                while (I2 <= Len) and (AnExpr[I2] <> '''') do
+                  Inc(I2);
+                if I2 <= Len then
+                  Inc(I2);
+              end;
+            'a' .. 'z', '_':
+              begin
+                while (I2 <= Len) and (AnExpr[I2] in ['a' .. 'z', '_', '0' .. '9']) do
+                  Inc(I2);
+              end;
+            '>', '<':
+              begin
+                if (I2 <= Len) then
+                  Inc(I2);
+                if AnExpr[I2] in ['=', '<', '>'] then
+                  Inc(I2);
+              end;
+            '=':
+              begin
+                if (I2 <= Len) then
+                  Inc(I2);
+                if AnExpr[I2] in ['<', '>', '='] then
+                  Inc(I2);
+              end;
+            '&':
+              begin
+                if (I2 <= Len) then
+                  Inc(I2);
+                if AnExpr[I2] in ['&'] then
+                  Inc(I2);
+              end;
+            '|':
+              begin
+                if (I2 <= Len) then
+                  Inc(I2);
+                if AnExpr[I2] in ['|'] then
+                  Inc(I2);
+              end;
+            ':':
+              begin
+                if (I2 <= Len) then
+                  Inc(I2);
+                if AnExpr[I2] = '=' then
+                  Inc(I2);
+              end;
+            '!':
+              begin
+                if (I2 <= Len) then
+                  Inc(I2);
+                if AnExpr[I2] = '=' then //support for !=
+                  Inc(I2);
+              end;
+            '+':
+              begin
+                Inc(I2);
+                if (I2 <= Len) and (AnExpr[I2] = '+') and WordsList.Search(pchar('++'), I) then
+                  Inc(I2);
+              end;
+            '-':
+              begin
+                Inc(I2);
+                if (I2 <= Len) and (AnExpr[I2] = '-') and WordsList.Search(pchar('--'), I) then
+                  Inc(I2);
+              end;
+            '^', '/', '\', '*', '(', ')', '%', '~', '$':
+              Inc(I2);
+            '0' .. '9':
+              ReadConstant(AnExpr, False);
+          else
+            begin
+              Inc(I2);
+            end;
           end;
-        end;
     end;
   end;
+
 begin
   OldDecim := FormatSettings.DecimalSeparator;
   FormatSettings.DecimalSeparator := DecimSeparator;
-  Result := TExprCollection.Create(10);
+  result := TExprCollection.Create(10);
   I2 := 1;
   S := Trim(LowerCase(AnExpression));
   Len := Length(S);
@@ -1105,18 +1099,19 @@ begin
         Word := TStringConstant.Create(W)
       else
         Word := TDoubleConstant.Create(W, W);
-      Result.Add(Word);
+      result.Add(Word);
       ConstantsList.Add(Word);
     end
-    else if W <> '' then
-      if WordsList.Search(pchar(W), I) then
-        Result.Add(WordsList.Items[I])
-      else
-      begin
-        Word := TGeneratedVariable.Create(W);
-        Result.Add(Word);
-        WordsList.Add(Word);
-      end;
+    else
+      if W <> '' then
+        if WordsList.Search(pchar(W), I) then
+          result.Add(WordsList.Items[I])
+        else
+        begin
+          Word := TGeneratedVariable.Create(W);
+          result.Add(Word);
+          WordsList.Add(Word);
+        end;
   until I2 > Len;
   FormatSettings.DecimalSeparator := OldDecim;
 end;
@@ -1126,17 +1121,15 @@ procedure TCustomExpressionParser.Check(AnExprList: TExprCollection);
 var
   I, J, K, L: Integer;
   Word: TSimpleStringFunction;
-  function GetStringFunction(ExprWord, Left, Right: TExprWord):
-      TSimpleStringFunction;
+  function GetStringFunction(ExprWord, Left, Right: TExprWord): TSimpleStringFunction;
   begin
     with TSimpleStringFunction(ExprWord) do
       if CanVary then
-        Result := TVaryingStringFunction.Create(Name, Description,
-          StringFunc, Left, Right)
+        result := TVaryingStringFunction.Create(name, Description, StringFunc, Left, Right)
       else
-        Result := TSimpleStringFunction.Create(Name, Description,
-          StringFunc, Left, Right);
+        result := TSimpleStringFunction.Create(name, Description, StringFunc, Left, Right);
   end;
+
 begin
   AnExprList.Check;
   with AnExprList do
@@ -1144,30 +1137,23 @@ begin
     I := 0;
     while I < Count do
     begin
-      {----CHECK ON DOUBLE MINUS OR DOUBLE PLUS----}
-      if ((TExprWord(Items[I]).Name = '-') or
-        (TExprWord(Items[I]).Name = '+'))
-        and ((I = 0) or
-        (TExprWord(Items[I - 1]).VarType = vtComma) or
-        (TExprWord(Items[I - 1]).VarType = vtLeftBracket) or
-        (TExprWord(Items[I - 1]).IsOper and (TExprWord(Items[I - 1]).NFunctionArg
-        = 2))) then
+      { ----CHECK ON DOUBLE MINUS OR DOUBLE PLUS---- }
+      if ((TExprWord(Items[I]).Name = '-') or (TExprWord(Items[I]).Name = '+')) and
+        ((I = 0) or (TExprWord(Items[I - 1]).VarType = vtComma) or (TExprWord(Items[I - 1]).VarType = vtLeftBracket) or
+          (TExprWord(Items[I - 1]).IsOper and (TExprWord(Items[I - 1]).NFunctionArg = 2))) then
       begin
-        {replace e.g. ----1 with +1}
+        { replace e.g. ----1 with +1 }
         if TExprWord(Items[I]).Name = '-' then
-          K := -1
+          K := - 1
         else
           K := 1;
         L := 1;
-        while (I + L < Count) and ((TExprWord(Items[I + L]).Name = '-')
-          or (TExprWord(Items[I + L]).Name = '+')) and ((I + L = 0) or
-          (TExprWord(Items[I + L - 1]).VarType = vtComma) or
-          (TExprWord(Items[I + L - 1]).VarType = vtLeftBracket) or
-          (TExprWord(Items[I + L - 1]).IsOper and (TExprWord(Items[I + L -
-          1]).NFunctionArg = 2))) do
+        while (I + L < Count) and ((TExprWord(Items[I + L]).Name = '-') or (TExprWord(Items[I + L]).Name = '+')) and
+          ((I + L = 0) or (TExprWord(Items[I + L - 1]).VarType = vtComma) or (TExprWord(Items[I + L - 1]).VarType = vtLeftBracket) or
+            (TExprWord(Items[I + L - 1]).IsOper and (TExprWord(Items[I + L - 1]).NFunctionArg = 2))) do
         begin
           if TExprWord(Items[I + L]).Name = '-' then
-            K := -1 * K;
+            K := - 1 * K;
           Inc(L);
         end;
         if L > 0 then
@@ -1177,29 +1163,25 @@ begin
             Items[J] := Items[J + L];
           Count := Count - L;
         end;
-        if K = -1 then
+        if K = - 1 then
         begin
           if WordsList.Search(pchar('-@'), J) then
             Items[I] := WordsList.Items[J];
         end
-        else if WordsList.Search(pchar('+@'), J) then
-          Items[I] := WordsList.Items[J];
+        else
+          if WordsList.Search(pchar('+@'), J) then
+            Items[I] := WordsList.Items[J];
       end;
-      {----CHECK ON DOUBLE NOT----}
-      if (TExprWord(Items[I]).Name = 'not')
-        and ((I = 0) or
-        (TExprWord(Items[I - 1]).VarType = vtLeftBracket) or
-        TExprWord(Items[I - 1]).IsOper) then
+      { ----CHECK ON DOUBLE NOT---- }
+      if (TExprWord(Items[I]).Name = 'not') and ((I = 0) or (TExprWord(Items[I - 1]).VarType = vtLeftBracket) or TExprWord(Items[I - 1]).IsOper) then
       begin
-        {replace e.g. not not 1 with 1}
-        K := -1;
+        { replace e.g. not not 1 with 1 }
+        K := - 1;
         L := 1;
-        while (I + L < Count) and (TExprWord(Items[I + L]).Name = 'not') and ((I
-          + L = 0) or
-          (TExprWord(Items[I + L - 1]).VarType = vtLeftBracket) or
-          TExprWord(Items[I + L - 1]).IsOper) do
+        while (I + L < Count) and (TExprWord(Items[I + L]).Name = 'not') and
+          ((I + L = 0) or (TExprWord(Items[I + L - 1]).VarType = vtLeftBracket) or TExprWord(Items[I + L - 1]).IsOper) do
         begin
-          K := -K;
+          K := - K;
           Inc(L);
         end;
         if L > 0 then
@@ -1219,41 +1201,29 @@ begin
           end
         end;
       end;
-      {-----MISC CHECKS-----}
-      if (TExprWord(Items[I]).isVariable) and ((I < Count - 1) and
-        (TExprWord(Items[I + 1]).isVariable)) then
-        raise EParserException.Create(errorprefix+TExprWord(Items[I]).Name +
-          ' two space limited variables/constants');
-      if (TExprWord(Items[I]).ClassType = TGeneratedVariable) and ((I < Count -
-        1) and
-        (TExprWord(Items[I + 1]).VarType = vtLeftBracket)) then
-        raise EParserException.Create(errorprefix+TExprWord(Items[I]).Name +
-          ' is an unknown function');
-      if (TExprWord(Items[I]).VarType = vtLeftBracket) and ((I >= Count - 1) or
-        (TExprWord(Items[I + 1]).VarType = vtRightBracket)) then
-        raise EParserException.Create(errorprefix+'Empty brackets ()');
-      if (TExprWord(Items[I]).VarType = vtRightBracket) and ((I < Count - 1) and
-        (TExprWord(Items[I + 1]).VarType = vtLeftBracket)) then
-        raise EParserException.Create(errorprefix+'Missing operand between )(');
-      if (TExprWord(Items[I]).VarType = vtRightBracket) and ((I < Count - 1) and
-        (TExprWord(Items[I + 1]).isVariable)) then
-        raise
-          EParserException.Create(errorprefix+'Missing operand between ) and constant/variable');
-      if (TExprWord(Items[I]).VarType = vtLeftBracket) and ((I > 0) and
-        (TExprWord(Items[I - 1]).isVariable)) then
-        raise
-          EParserException.Create(errorprefix+'Missing operand between constant/variable and (');
+      { -----MISC CHECKS----- }
+      if (TExprWord(Items[I]).isVariable) and ((I < Count - 1) and (TExprWord(Items[I + 1]).isVariable)) then
+        raise EParserException.Create(errorPrefix + TExprWord(Items[I]).Name + ' two space limited variables/constants');
+      if (TExprWord(Items[I]).ClassType = TGeneratedVariable) and ((I < Count - 1) and (TExprWord(Items[I + 1]).VarType = vtLeftBracket)) then
+        raise EParserException.Create(errorPrefix + TExprWord(Items[I]).Name + ' is an unknown function');
+      if (TExprWord(Items[I]).VarType = vtLeftBracket) and ((I >= Count - 1) or (TExprWord(Items[I + 1]).VarType = vtRightBracket)) then
+        raise EParserException.Create(errorPrefix + 'Empty brackets ()');
+      if (TExprWord(Items[I]).VarType = vtRightBracket) and ((I < Count - 1) and (TExprWord(Items[I + 1]).VarType = vtLeftBracket)) then
+        raise EParserException.Create(errorPrefix + 'Missing operand between )(');
+      if (TExprWord(Items[I]).VarType = vtRightBracket) and ((I < Count - 1) and (TExprWord(Items[I + 1]).isVariable)) then
+        raise EParserException.Create(errorPrefix + 'Missing operand between ) and constant/variable');
+      if (TExprWord(Items[I]).VarType = vtLeftBracket) and ((I > 0) and (TExprWord(Items[I - 1]).isVariable)) then
+        raise EParserException.Create(errorPrefix + 'Missing operand between constant/variable and (');
 
-      {-----CHECK ON INTPOWER------}
-      if (TExprWord(Items[I]).Name = '^') and ((I < Count - 1) and
-        (TExprWord(Items[I + 1]).ClassType = TDoubleConstant) and
-        (Pos(DecimSeparator, TExprWord(Items[I + 1]).Name) = 0)) then
+      { -----CHECK ON INTPOWER------ }
+      if (TExprWord(Items[I]).Name = '^') and ((I < Count - 1) and (TExprWord(Items[I + 1]).ClassType = TDoubleConstant) and
+          (pos(DecimSeparator, TExprWord(Items[I + 1]).Name) = 0)) then
         if WordsList.Search(pchar('^@'), J) then
           Items[I] := WordsList.Items[J]; //use the faster intPower if possible
       Inc(I);
     end;
 
-    {-----CHECK STRING COMPARE--------}
+    { -----CHECK STRING COMPARE-------- }
     I := Count - 2;
     while I >= 0 do
     begin
@@ -1261,11 +1231,9 @@ begin
       begin
         if (I >= 2) and (TExprWord(Items[I - 2]) is TSimpleStringFunction) then
         begin
-          if (I + 2 < Count) and (TExprWord(Items[I + 2]).VarType = vtString)
-            then
+          if (I + 2 < Count) and (TExprWord(Items[I + 2]).VarType = vtString) then
           begin
-            Word := GetStringFunction(TExprWord(Items[I - 2]),
-              TExprWord(Items[I]), TExprWord(Items[I + 2]));
+            Word := GetStringFunction(TExprWord(Items[I - 2]), TExprWord(Items[I]), TExprWord(Items[I + 2]));
             Items[I - 2] := Word;
             for J := I - 1 to Count - 6 do
               Items[J] := Items[J + 5];
@@ -1276,8 +1244,7 @@ begin
           else
           begin
             with TSimpleStringFunction(Items[I - 2]) do
-              Word := GetStringFunction(TExprWord(Items[I - 2]),
-                TExprWord(Items[I]), nil);
+              Word := GetStringFunction(TExprWord(Items[I - 2]), TExprWord(Items[I]), nil);
             Items[I - 2] := Word;
             for J := I - 1 to Count - 4 do
               Items[J] := Items[J + 3];
@@ -1286,17 +1253,16 @@ begin
             ConstantsList.Add(Word);
           end;
         end
-        else if (I + 2 < Count) and (TExprWord(Items[I + 2]).VarType = vtString)
-          then
-        begin
-          Word := TLogicalStringOper.Create(TExprWord(Items[I + 1]).Name,
-            TExprWord(Items[I]), TExprWord(Items[I + 2]));
-          Items[I] := Word;
-          for J := I + 1 to Count - 3 do
-            Items[J] := Items[J + 2];
-          Count := Count - 2;
-          ConstantsList.Add(Word);
-        end;
+        else
+          if (I + 2 < Count) and (TExprWord(Items[I + 2]).VarType = vtString) then
+          begin
+            Word := TLogicalStringOper.Create(TExprWord(Items[I + 1]).Name, TExprWord(Items[I]), TExprWord(Items[I + 2]));
+            Items[I] := Word;
+            for J := I + 1 to Count - 3 do
+              Items[J] := Items[J + 2];
+            Count := Count - 2;
+            ConstantsList.Add(Word);
+          end;
       end;
       Dec(I);
     end;
@@ -1304,19 +1270,19 @@ begin
 end;
 
 {$IFDEF NAN}
+
 function HasNaN(LastRec1: PExpressionRec): Boolean;
 var
   I: Integer;
 begin
-  Result := False;
-  for I := 0 to LastRec1^.ExprWord.NFunctionArg- 1 do
-    if (comp(LastRec1^.Args[I]^)= comp(Nan))
+  result := False;
+  for I := 0 to LastRec1^.ExprWord.NFunctionArg - 1 do
+    if (comp(LastRec1^.Args[I]^) = comp(Nan))
       //much faster than CompareMem(LastRec1^.Args[I], @Nan, SizeOf(Double))
-    and (@LastRec1^.ExprWord.DoubleFunc <> @_isNaN) and
-      (@LastRec1^.ExprWord.DoubleFunc <> @_Assign) then
+      and (@LastRec1^.ExprWord.DoubleFunc <> @_isNaN) and (@LastRec1^.ExprWord.DoubleFunc <> @_Assign) then
     begin
-      Result := True;
-      exit;
+      result := True;
+      Exit;
     end;
 end;
 {$ENDIF}
@@ -1339,33 +1305,28 @@ begin
       LastRec1 := LastRec1^.Next;
     end;
 {$IFDEF NAN}
-      if HasNaN(LastRec1) then
-        LastRec1^.Res := Nan
-      else
+    if HasNaN(LastRec1) then
+      LastRec1^.Res := Nan
+    else
 {$ENDIF}
-        LastRec1^.Oper(LastRec1);
-    Result := LastRec1^.Res;
+      LastRec1^.Oper(LastRec1);
+    result := LastRec1^.Res;
   end
   else
-    Result := Nan;
+    result := Nan;
 end;
 
-procedure TCustomExpressionParser.DefineFunction(AFunctName, ADescription:
-  string;
-  AFuncAddress: TDoubleFunc; NArguments: Integer);
+procedure TCustomExpressionParser.DefineFunction(AFunctName, ADescription: string; AFuncAddress: TDoubleFunc; NArguments: Integer);
 begin
-  AddReplaceExprWord(TFunction.Create(AFunctName, ADescription, AFuncAddress,
-    NArguments));
+  AddReplaceExprWord(TFunction.Create(AFunctName, ADescription, AFuncAddress, NArguments));
 end;
 
-procedure TCustomExpressionParser.DefineVariable(AVarName: string; AValue:
-  PDouble);
+procedure TCustomExpressionParser.DefineVariable(AVarName: string; AValue: PDouble);
 begin
   AddReplaceExprWord(TDoubleVariable.Create(AVarName, AValue));
 end;
 
-procedure TCustomExpressionParser.DefineStringVariable(AVarName: string; AValue:
-  PString);
+procedure TCustomExpressionParser.DefineStringVariable(AVarName: string; AValue: PString);
 begin
   AddReplaceExprWord(TStringVariable.Create(AVarName, AValue));
 end;
@@ -1388,28 +1349,25 @@ var
   LastRec1: PExpressionRec;
 begin
   if CurrentRec = nil then
-    Result := False
+    result := False
   else
   begin
     LastRec1 := CurrentRec;
     //LAST operand should be boolean -otherwise If(,,) doesn't work
     while (LastRec1^.Next <> nil) do
       LastRec1 := LastRec1^.Next;
-    Result := (LastRec1.ExprWord <> nil) and (LastRec1.ExprWord.VarType =
-      vtBoolean);
+    result := (LastRec1.ExprWord <> nil) and (LastRec1.ExprWord.VarType = vtBoolean);
   end;
 end;
 
-procedure TCustomExpressionParser.ReplaceExprWord(OldExprWord, NewExprWord:
-  TExprWord);
+procedure TCustomExpressionParser.ReplaceExprWord(OldExprWord, NewExprWord: TExprWord);
 var
   J: Integer;
   Rec: PExpressionRec;
   p, pnew: pointer;
 begin
   if OldExprWord.NFunctionArg <> NewExprWord.NFunctionArg then
-    raise
-      Exception.Create(errorprefix+'Cannot replace variable/function NFuntionArg doesn''t match');
+    raise Exception.Create(errorPrefix + 'Cannot replace variable/function NFuntionArg doesn''t match');
   p := OldExprWord.AsPointer;
   pnew := NewExprWord.AsPointer;
   Rec := CurrentRec;
@@ -1431,13 +1389,13 @@ function TCustomExpressionParser.MakeRec: PExpressionRec;
 var
   I: Integer;
 begin
-  Result := New(PExpressionRec);
-  Result.Oper := nil;
+  result := New(PExpressionRec);
+  result.Oper := nil;
   for I := 0 to MaxArg - 1 do
-    Result.ArgList[I] := nil;
-  Result.Res := 0;
-  Result.Next := nil;
-  Result.ExprWord := nil;
+    result.ArgList[I] := nil;
+  result.Res := 0;
+  result.Next := nil;
+  result.ExprWord := nil;
 end;
 
 function TCustomExpressionParser.Evaluate(AnExpression: string): Double;
@@ -1445,25 +1403,24 @@ begin
   if AnExpression <> '' then
   begin
     AddExpression(AnExpression);
-    Result := EvaluateList(CurrentRec);
+    result := EvaluateList(CurrentRec);
   end
   else
-    Result := Nan;
+    result := Nan;
 end;
 
 function TCustomExpressionParser.AddExpression(AnExpression: string): Integer;
 begin
   if AnExpression <> '' then
   begin
-    Result := 0;
+    result := 0;
     CompileExpression(AnExpression);
   end
   else
-    Result := -1;
+    result := - 1;
 end;
 
-procedure TCustomExpressionParser.ReplaceFunction(OldName: string; AFunction:
-  TObject);
+procedure TCustomExpressionParser.ReplaceFunction(OldName: string; AFunction: TObject);
 var
   I: Integer;
 begin
@@ -1496,7 +1453,7 @@ end;
 
 function TCustomExpressionParser.EvaluateCurrent: Double;
 begin
-  Result := EvaluateList(CurrentRec);
+  result := EvaluateList(CurrentRec);
 end;
 
 procedure TCustomExpressionParser.AddReplaceExprWord(AExprWord: TExprWord);
@@ -1513,20 +1470,19 @@ begin
     WordsList.Add(AExprWord);
 end;
 
-function TCustomExpressionParser.GetFunctionDescription(AFunction: string):
-  string;
+function TCustomExpressionParser.GetFunctionDescription(AFunction: string): string;
 var
   S: string;
   p, I: Integer;
 begin
   S := AFunction;
-  p := Pos('(', S);
+  p := pos('(', S);
   if p > 0 then
     S := Copy(S, 1, p - 1);
   if WordsList.Search(pchar(S), I) then
-    Result := TExprWord(WordsList.Items[I]).Description
+    result := TExprWord(WordsList.Items[I]).Description
   else
-    Result := '';
+    result := '';
 end;
 
 procedure TCustomExpressionParser.GetFunctionNames(AList: TStrings);
@@ -1539,7 +1495,7 @@ begin
       with TExprWord(WordsList.Items[I]) do
         if Description <> '' then
         begin
-          S := Name;
+          S := name;
           if NFunctionArg > 0 then
           begin
             S := S + '(';
@@ -1551,12 +1507,9 @@ begin
         end;
 end;
 
-procedure TCustomExpressionParser.DefineStringFunction(AFunctName,
-  ADescription: string; AFuncAddress: TStringFunc);
+procedure TCustomExpressionParser.DefineStringFunction(AFunctName, ADescription: string; AFuncAddress: TStringFunc);
 begin
-  AddReplaceExprWord(TSimpleStringFunction.Create(AFunctName, ADescription,
-    AFuncAddress,
-    nil, nil));
+  AddReplaceExprWord(TSimpleStringFunction.Create(AFunctName, ADescription, AFuncAddress, nil, nil));
 end;
 
 procedure TCustomExpressionParser.SetArgSeparator(const Value: Char);
@@ -1594,12 +1547,12 @@ begin
   for I := 0 to Expressions.Count - 1 do
     DisposeList(PExpressionRec(Expressions.Objects[I]));
   Expressions.Clear;
-  CurrentIndex := -1;
+  CurrentIndex := - 1;
   CurrentRec := nil;
   LastRec := nil;
 end;
 
-{function TExpressionParser.Evaluate(AnExpression: string): Double;
+{ function TExpressionParser.Evaluate(AnExpression: string): Double;
 begin
   if AnExpression <> '' then
   begin
@@ -1615,15 +1568,15 @@ function TExpressionParser.AddExpression(AnExpression: string): Integer;
 begin
   if AnExpression <> '' then
   begin
-    Result := Expressions.IndexOf(AnExpression);
-    if (Result < 0) and CompileExpression(AnExpression) then
-      Result := Expressions.AddObject(AnExpression, TObject(CurrentRec))
+    result := Expressions.IndexOf(AnExpression);
+    if (result < 0) and CompileExpression(AnExpression) then
+      result := Expressions.AddObject(AnExpression, TObject(CurrentRec))
     else
-      CurrentRec := PExpressionRec(Expressions.Objects[Result]);
+      CurrentRec := PExpressionRec(Expressions.Objects[result]);
   end
   else
-    Result := -1;
-  CurrentIndex := Result;
+    result := - 1;
+  CurrentIndex := result;
 end;
 
 function TExpressionParser.GetResults(AIndex: Integer): Double;
@@ -1631,10 +1584,10 @@ begin
   if AIndex >= 0 then
   begin
     CurrentRec := PExpressionRec(Expressions.Objects[AIndex]);
-    Result := EvaluateList(CurrentRec);
+    result := EvaluateList(CurrentRec);
   end
   else
-    Result := Nan;
+    result := Nan;
 end;
 
 function TExpressionParser.GetAsBoolean(AIndex: Integer): Boolean;
@@ -1643,11 +1596,12 @@ var
 begin
   D := AsFloat[AIndex];
   if not isBoolean then
-    raise EParserException.Create(errorprefix+'Expression is not boolean')
-  else if (D < 0.1) and (D > -0.1) then
-    Result := False
+    raise EParserException.Create(errorPrefix + 'Expression is not boolean')
   else
-    Result := True;
+    if (D < 0.1) and (D > - 0.1) then
+      result := False
+    else
+      result := True;
 end;
 
 function TExpressionParser.GetAsString(AIndex: Integer): string;
@@ -1658,18 +1612,19 @@ begin
   if isBoolean then
   begin
 {$IFDEF nan}
-     if isNan(D) then
-      Result := 'NAN'
+    if isNan(D) then
+      result := 'NAN'
     else
-{$ENDIF}if (D < 0.1) and (D > -0.1) then
-        Result := 'False'
-      else if (D > 0.9) and (D < 1.1) then
-        Result := 'True'
+{$ENDIF} if (D < 0.1) and (D > - 0.1) then
+        result := 'False'
       else
-        Result := Format('%.10g', [D]);
+        if (D > 0.9) and (D < 1.1) then
+          result := 'True'
+        else
+          result := Format('%.10g', [D]);
   end
   else
-    Result := Format('%.10g', [D]);
+    result := Format('%.10g', [D]);
 end;
 
 constructor TExpressionParser.Create;
@@ -1694,17 +1649,13 @@ begin
     Add(TComma.Create(ArgSeparator, nil));
     Add(TConstant.CreateAsDouble('pi', 'pi = 3.1415926535897932385', Pi));
 {$IFDEF NAN}
-    Add(TConstant.CreateAsDouble('nan',
-      'Not a number, mathematical error in result', Nan));
-    Add(TBooleanFunction.Create('isnan', 'Is Not a Number (has error)?', _isNaN,
-      1));
+    Add(TConstant.CreateAsDouble('nan', 'Not a number, mathematical error in result', Nan));
+    Add(TBooleanFunction.Create('isnan', 'Is Not a Number (has error)?', _isNaN, 1));
 {$ENDIF}
-    Add(TVaryingFunction.Create('random',
-      'random number between 0 and 1', _random, 0));
+    Add(TVaryingFunction.Create('random', 'random number between 0 and 1', _random, 0));
     // definitions of operands:
     // the last number is used to determine the precedence
-    Add(TFunction.CreateOper('!', _factorial, 1,
-      True { isOperand}, 10 {precedence}));
+    Add(TFunction.CreateOper('!', _factorial, 1, True { isOperand } , 10 { precedence } ));
     Add(TFunction.CreateOper('++', _Add1, 1, True, 5));
     Add(TFunction.CreateOper('--', _minus1, 1, True, 5));
     Add(TFunction.CreateOper('%', _Percentage, 1, True, 10));
@@ -1730,18 +1681,14 @@ begin
     Add(TBooleanFunction.CreateOper('and', _And, 2, True, 70));
     Add(TBooleanFunction.CreateOper('xor', _xor, 2, True, 70));
     Add(TFunction.CreateOper(':=', _Assign, 2, True, 200));
-    Add(TFunction.Create('exp', 'the value of e raised to the power of x'
-      , _exp, 1));
+    Add(TFunction.Create('exp', 'the value of e raised to the power of x', _exp, 1));
     Add(TFunction.Create('if', 'if x=True(or 1) then y else z', _if, 3));
-    Add(TVaryingFunction.Create('randg',
-      'draw from normal distrib. (mean=x, sd =y)'
-      , _randG, 2));
+    Add(TVaryingFunction.Create('randg', 'draw from normal distrib. (mean=x, sd =y)', _randG, 2));
     Add(TFunction.Create('sqr', 'the square of a number (x*x)', _sqr, 1));
     Add(TFunction.Create('sqrt', 'the square root of a number', _sqrt, 1));
     Add(TFunction.Create('abs', 'absolute value', _Abs, 1));
     Add(TFunction.Create('round', 'round to the nearest integer', _round, 1));
-    Add(TFunction.Create('trunc', 'truncates a real number to an integer',
-      _trunc, 1));
+    Add(TFunction.Create('trunc', 'truncates a real number to an integer', _trunc, 1));
     Add(TFunction.Create('ln', 'natural logarithm of x', _ln, 1));
     Add(TFunction.Create('log10', 'logarithm base 10 of x', _log10, 1));
     Add(TFunction.Create('logN', 'logarithm base x of y', _logN, 2));
@@ -1755,26 +1702,18 @@ begin
     Add(TFunction.Create('tan', 'tangent of an angle in rad', _tan, 1));
     Add(TFunction.Create('arcsin', 'inverse sine in rad', _ArcSin, 1));
     Add(TFunction.Create('arccos', 'inverse cosine in rad', _ArcCos, 1));
-    Add(TFunction.Create('arctan2', 'inverse tangent (x/y) in rad', _ArcTan2,
-      2));
+    Add(TFunction.Create('arctan2', 'inverse tangent (x/y) in rad', _ArcTan2, 2));
     Add(TFunction.Create('arctan', 'inverse tangent (x/y) in rad', _arctan, 1));
-    Add(TFunction.Create('sinh', 'hyperbolic sine of an angle in rad', _Sinh,
-      1));
-    Add(TFunction.Create('cosh', 'hyperbolic sine of an angle in rad', _Cosh,
-      1));
-    Add(TFunction.Create('tanh', 'hyperbolic tangent of an angle in rad', _tanh,
-      1));
+    Add(TFunction.Create('sinh', 'hyperbolic sine of an angle in rad', _Sinh, 1));
+    Add(TFunction.Create('cosh', 'hyperbolic sine of an angle in rad', _Cosh, 1));
+    Add(TFunction.Create('tanh', 'hyperbolic tangent of an angle in rad', _tanh, 1));
     Add(TFunction.Create('arcsinh', 'inverse sine in rad', _ArcSinh, 1));
-    Add(TFunction.Create('arccosh', 'inverse hyperbolic cosine in rad',
-      _ArcCosh, 1));
-    Add(TFunction.Create('arctanh', 'inverse hyperbolic tangent in rad',
-      _ArcTanh, 1));
-    Add(TFunction.Create('degtorad', 'conversion of degrees to radians',
-      _DegToRad, 1));
-    Add(TFunction.Create('radtodeg', 'conversion of rad to degrees', _RadToDeg,
-      1));
+    Add(TFunction.Create('arccosh', 'inverse hyperbolic cosine in rad', _ArcCosh, 1));
+    Add(TFunction.Create('arctanh', 'inverse hyperbolic tangent in rad', _ArcTanh, 1));
+    Add(TFunction.Create('degtorad', 'conversion of degrees to radians', _DegToRad, 1));
+    Add(TFunction.Create('radtodeg', 'conversion of rad to degrees', _RadToDeg, 1));
 
-    DefineStringFunction('pos','Position in of substring in string',_pos);
+    DefineStringFunction('pos', 'Position in of substring in string', _Pos);
   end;
 end;
 
@@ -1783,41 +1722,38 @@ var
   D: Double;
 begin
   D := AsFloat[AIndex];
-  Result := Format(HexChar + '%x', [Round(D)]);
+  result := Format(HexChar + '%x', [Round(D)]);
 end;
 
 function TExpressionParser.GetExpression(AIndex: Integer): string;
 begin
-  Result := Expressions.Strings[AIndex];
+  result := Expressions.Strings[AIndex];
 end;
 
 function TExpressionParser.GetExprSize(AIndex: Integer): Integer;
 var
   TheNext, ARec: PExpressionRec;
 begin
-  Result := 0;
+  result := 0;
   if AIndex >= 0 then
   begin
     ARec := PExpressionRec(Expressions.Objects[AIndex]);
     while ARec <> nil do
     begin
       TheNext := ARec.Next;
-      if (ARec.ExprWord <> nil) and
-        not ARec.ExprWord.isVariable then
-        Inc(Result);
+      if (ARec.ExprWord <> nil) and not ARec.ExprWord.isVariable then
+        Inc(result);
       ARec := TheNext;
     end;
   end;
 end;
 
-procedure TExpressionParser.ReplaceExprWord(OldExprWord, NewExprWord:
-  TExprWord);
+procedure TExpressionParser.ReplaceExprWord(OldExprWord, NewExprWord: TExprWord);
 var
   I: Integer;
 begin
   if OldExprWord.NFunctionArg <> NewExprWord.NFunctionArg then
-    raise
-      Exception.Create(errorprefix+'Cannot replace variable/function NFuntionArg doesn''t match');
+    raise Exception.Create(errorPrefix + 'Cannot replace variable/function NFuntionArg doesn''t match');
   if Expressions <> nil then
     for I := 0 to Expressions.Count - 1 do
     begin
@@ -1828,7 +1764,7 @@ end;
 
 function TExpressionParser.CurrentExpression: string;
 begin
-  Result := Expressions.Strings[CurrentIndex];
+  result := Expressions.Strings[CurrentIndex];
 end;
 
 { TCStyleParser }
@@ -1846,14 +1782,11 @@ begin
   begin
     //note: mind the correct order of replacements
     ReplaceFunction('!', TFunction.Create('fact', 'factorial', _factorial, 1));
-    ReplaceFunction('div', TFunction.Create('div', 'integer division', _Div,
-      2));
-    ReplaceFunction('%', TFunction.Create('perc', 'percentage', _Percentage,
-      1));
+    ReplaceFunction('div', TFunction.Create('div', 'integer division', _Div, 2));
+    ReplaceFunction('%', TFunction.Create('perc', 'percentage', _Percentage, 1));
     ReplaceFunction('mod', TFunction.CreateOper('%', _mod, 2, True, 30));
     ReplaceFunction('or', TBooleanFunction.CreateOper('||', _or, 2, True, 70));
-    ReplaceFunction('and', TBooleanFunction.CreateOper('&&', _And, 2, True,
-      70));
+    ReplaceFunction('and', TBooleanFunction.CreateOper('&&', _And, 2, True, 70));
     ReplaceFunction('=', TBooleanFunction.CreateOper('==', _eq, 2, True, 50));
     ReplaceFunction(':=', TFunction.CreateOper('=', _Assign, 2, True, 200));
     ReplaceFunction('<>', TBooleanFunction.CreateOper('!=', _ne, 2, True, 50));
@@ -1866,11 +1799,9 @@ begin
     ReplaceFunction('fact', TFunction.CreateOper('!', _factorial, 1, True, 10));
     ReplaceFunction('div', TFunction.CreateOper('div', _Div, 2, True, 30));
     ReplaceFunction('%', TFunction.CreateOper('mod', _mod, 2, True, 30));
-    ReplaceFunction('perc', TFunction.CreateOper('%', _Percentage, 1, True,
-      10));
+    ReplaceFunction('perc', TFunction.CreateOper('%', _Percentage, 1, True, 10));
     ReplaceFunction('||', TBooleanFunction.CreateOper('or', _or, 2, True, 70));
-    ReplaceFunction('&&', TBooleanFunction.CreateOper('and', _And, 2, True,
-      70));
+    ReplaceFunction('&&', TBooleanFunction.CreateOper('and', _And, 2, True, 70));
     ReplaceFunction('=', TFunction.CreateOper(':=', _Assign, 2, True, 200));
     ReplaceFunction('==', TBooleanFunction.CreateOper('=', _eq, 2, True, 50));
     ReplaceFunction('!=', TBooleanFunction.CreateOper('<>', _ne, 2, True, 50));
@@ -1878,5 +1809,3 @@ begin
 end;
 
 end.
-
-

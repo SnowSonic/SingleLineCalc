@@ -1,14 +1,18 @@
 unit FormExpr;
-{--------------------------------------------------------------
+
+{ --------------------------------------------------------------
 | TFormulaParser
 |  Multi formula support
 |  Extension by Xavier Mor-Mur
 |  xmormur@telepolis.com
 |  xmormur@teleline.es
 |
-|---------------------------------------------------------------}
+|--------------------------------------------------------------- }
 interface
-uses OObjects, SysUtils, Classes, ParseExpr, ParseClass;
+
+uses
+  OObjects, SysUtils, Classes, ParseExpr, ParseClass;
+
 type
 
   TFormulaParser = class(TExpressionParser)
@@ -30,8 +34,11 @@ type
     function Text(FName: string): string;
     property Trace: Boolean read bTrace write bTrace;
   end;
+
 implementation
-uses Math;
+
+uses
+  Math;
 
 var
   sExpr: string; // needed for display(...) function
@@ -64,28 +71,24 @@ begin
   tslTmp.Clear;
   tslTmp.SetText(PChar(FExpr));
   expr := TStringList.Create;
-  Result := -1;
+  Result := - 1;
   i := FormulaNames.IndexOf(FName);
   if i >= 0 then
     FormulaNames.Delete(i);
   if tslTmp.Count > 0 then
   begin
     for i := 0 to tslTmp.Count - 1 do
-    begin
       if tslTmp.Strings[i] <> '' then
       begin
         j := AddExpression(tslTmp.Strings[i]);
         if j < 0 then
           break;
-        if (copy(Expression[j], 1, 5) = 'goto(') or
-          (copy(Expression[j], 1, 7) = 'ifgoto(') or
-          (copy(Expression[j], 1, 8) = 'display(') or
+        if (copy(Expression[j], 1, 5) = 'goto(') or (copy(Expression[j], 1, 7) = 'ifgoto(') or (copy(Expression[j], 1, 8) = 'display(') or
           (copy(Expression[j], 1, 4) = 'stop') then
-          expr.Add(IntToStr(-(j + 1)))
+          expr.Add(IntToStr( - (j + 1)))
         else
           expr.Add(IntToStr(j + 1));
       end;
-    end;
     if expr.Count > 0 then
       Result := FormulaNames.AddObject(FName, TObject(expr));
   end;
@@ -118,17 +121,14 @@ begin
     while i < expr.Count do
     begin
       Val(expr.Strings[i], j, k);
-      sExpr := '(' + IntToStr(i + 1) + ') ' + Expression[abs(j) - 1] +
-        char($0D0A) + char($0D0A);
+      sExpr := '(' + IntToStr(i + 1) + ') ' + Expression[abs(j) - 1] + char($0D0A) + char($0D0A);
       if j < 0 then
       begin
         k := trunc(AsFloat[abs(j) - 1]);
         if k > 0 then
           i := k - 1 // goto(...), ifgoto(...), stop
         else
-        begin
           i := i + 1; // display(...)
-        end;
       end
       else
       begin
@@ -172,7 +172,7 @@ begin
     for i := 0 to expr.Count - 1 do
     begin
       Val(expr.Strings[i], j, k);
-      tslTmp.Add(Expression[abs(j)-1]);
+      tslTmp.Add(Expression[abs(j) - 1]);
     end;
   end;
   Result := tslTmp.Text;
@@ -200,10 +200,12 @@ begin
   begin
     if Args[0]^ < 0 then
       Res := Args[1]^
-    else if Args[0]^ = 0 then
-      Res := Args[2]^
-    else if Args[0]^ > 0 then
-      Res := Args[3]^;
+    else
+      if Args[0]^ = 0 then
+        Res := Args[2]^
+      else
+        if Args[0]^ > 0 then
+          Res := Args[3]^;
   end;
 end;
 
@@ -212,7 +214,6 @@ begin
   with Param^ do
   begin
     sExpr := sExpr + char($0D0A) + char($0D0A) + FloatToStr(Args[0]^);
-    //ShowMessage(sExpr);
     Res := 0;
   end;
 end;
@@ -230,4 +231,3 @@ begin
 end;
 
 end.
-
